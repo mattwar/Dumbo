@@ -160,6 +160,28 @@ namespace Tests
         private record SomeRecord(string a, int b);
         private record struct SomeRecordStruct(string a, int b);
 
+        private enum I8Enum : sbyte { A = 1, B, C };
+        private enum I16Enum : short { A = 1, B, C };
+        private enum I32Enum : int { A = 1, B, C };
+        private enum I64Enum : long { A = 1, B, C };
+        private enum UI8Enum : byte { A = 1, B, C };
+        private enum UI16Enum : ushort { A = 1, B, C };
+        private enum UI32Enum : uint { A = 1, B, C };
+        private enum UI64Enum : ulong { A = 1, B, C };
+
+        [TestMethod]
+        public void TestEnums()
+        {
+            TestCreateAndAccess(I8Enum.A);
+            TestCreateAndAccess(I16Enum.A);
+            TestCreateAndAccess(I32Enum.A);
+            TestCreateAndAccess(I64Enum.A);
+            TestCreateAndAccess(UI8Enum.A);
+            TestCreateAndAccess(UI16Enum.A);
+            TestCreateAndAccess(UI32Enum.A);
+            TestCreateAndAccess(UI64Enum.A);
+        }
+
         private void TestCreateAndAccess<T>(T value)
         {
             var v = Variant.Create(value);

@@ -1,6 +1,8 @@
-﻿using System.Diagnostics;
+﻿using System.Collections.Immutable;
+using System.Diagnostics;
 using System.Diagnostics.CodeAnalysis;
 using System.Runtime.InteropServices;
+using System.Runtime.CompilerServices;
 using System.Text;
 
 namespace Dumbo
@@ -40,32 +42,9 @@ namespace Dumbo
         public readonly bool IsNull => Kind == VariantKind.Null;
 
         public readonly Type? Type =>
-            Kind switch
-            {
-                VariantKind.Bool => typeof(bool),
-                VariantKind.Int8 => typeof(sbyte),
-                VariantKind.Int16 => typeof(short),
-                VariantKind.Int32 => typeof(int),
-                VariantKind.Int64 => typeof(long),
-                VariantKind.UInt8 => typeof(byte),
-                VariantKind.UInt16 => typeof(ushort),
-                VariantKind.UInt32 => typeof(uint),
-                VariantKind.UInt64 => typeof(ulong),
-                VariantKind.Float32 => typeof(float),
-                VariantKind.Float64 => typeof(double),
-                VariantKind.Char16 => typeof(char),
-                VariantKind.Char32 => typeof(Rune),
-                VariantKind.Decimal64 => typeof(Decimal64),
-                VariantKind.Decimal128 => typeof(decimal),
-                VariantKind.DateOnly => typeof(DateOnly),
-                VariantKind.TimeOnly => typeof(TimeOnly),
-                VariantKind.DateTime => typeof(DateTime),
-                VariantKind.TimeSpan => typeof(TimeSpan),
-                VariantKind.String => typeof(String),
-                VariantKind.Object => _refValue?.GetType(),
-                _ => null
-            };
-
+            _refValue is OverlappedInfo info
+                ? info.Type
+                : _refValue?.GetType();
 
         public static readonly Variant Null = new Variant(null, default);
 
@@ -107,6 +86,13 @@ namespace Dumbo
 
         public static Variant Create<T>(T? value)
         {
+            if (typeof(T).IsEnum && value != null)
+            {
+                var info = GetEnumInfo<T>();
+                var val = ConvertEnumToLong(value);
+                return new Variant(info, new Overlapped { Int64 = val });
+            }
+
             return value switch
             {
                 bool v => Create(v),
@@ -129,7 +115,10 @@ namespace Dumbo
                 DateTime v => Create(v),
                 TimeSpan v => Create(v),
                 Variant v => v,
-                ITypeUnion tu => tu.TryGet<object>(out var obj) ? Create<object>(obj) : Null,
+                ITypeUnion tu => 
+                      tu.TryGet<Variant>(out var v) ? v
+                    : tu.TryGet<object>(out var ov) ? Create<object>(ov)
+                    : Null,
                 object obj => new Variant(obj, new Overlapped { UInt64 = 0L }),
                 null => Null
             };
@@ -158,17 +147,34 @@ namespace Dumbo
         private TimeOnly TimeOnlyValue => Kind == VariantKind.TimeOnly ? new TimeOnly(_structValue.Int64) : default;
         private DateTime DateTimeValue => Kind == VariantKind.DateTime ? new DateTime(_structValue.Int64) : default;
         private TimeSpan TimeSpanValue => Kind == VariantKind.TimeSpan ? new TimeSpan(_structValue.Int64) : default;
+        private long EnumLongValue => Kind == VariantKind.Enum ? _structValue.Int64 : default;
         private object? ObjectValue => Kind == VariantKind.Object ? _refValue : null;
               
         public readonly bool IsType<T>()
         {
-            if (Kind == VariantKind.Object)
-                return ObjectValue is T;
-            return Kind == GetKind(typeof(T));
+            if (_refValue is EnumInfo einfo)
+                return einfo.IsType<T>(EnumLongValue);
+            else if (_refValue is OverlappedInfo info)
+                return info.Kind == GetKind<T>();
+            else
+                return _refValue is T;
         }
 
         public readonly bool TryGet<T>([NotNullWhen(true)] out T value)
         {
+            if (typeof(T) == typeof(object)
+                && ToObject() is T objVal)
+            {
+                value = objVal;
+                return true;
+            }
+            else if (typeof(T) == typeof(Variant)
+                && this is T varVal)
+            {
+                value = varVal;
+                return true;
+            }
+
             switch (Kind)
             {
                 case VariantKind.Bool: 
@@ -304,6 +310,13 @@ namespace Dumbo
                         return true;
                     }
                     break;
+                case VariantKind.Enum:
+                    var info = (EnumInfo)_refValue!;
+                    if (info.IsType<T>(EnumLongValue))
+                    {
+                        return TryConvertLongToEnum(_structValue.Int64, out value);
+                    }
+                    break;
                 case VariantKind.String:
                     if (StringValue is T stringValue)
                     {
@@ -332,6 +345,33 @@ namespace Dumbo
         public readonly T AsType<T>() => TryGet<T>(out var value) ? value : default!;
         public readonly T Get<T>() => TryGet<T>(out var value) ? value : throw new InvalidCastException($"Cannot cast to type: {typeof(T).Name}");
 
+        public object? ToObject() =>
+            Kind switch
+            {
+                VariantKind.Bool => BoolValue,
+                VariantKind.Int8 => Int8Value,
+                VariantKind.Int16 => Int16Value,
+                VariantKind.Int32 => Int32Value,
+                VariantKind.Int64 => Int64Value,
+                VariantKind.UInt8 => UInt8Value,
+                VariantKind.UInt16 => UInt16Value,
+                VariantKind.UInt32 => UInt32Value,
+                VariantKind.UInt64 => UInt64Value,
+                VariantKind.Float32 => Float32Value,
+                VariantKind.Float64 => Float64Value,
+                VariantKind.Char16 => Char16Value,
+                VariantKind.Char32 => Char32Value,
+                VariantKind.Decimal64 => Decimal64Value,
+                VariantKind.Decimal128 => Decimal128Value,
+                VariantKind.DateOnly => DateOnlyValue,
+                VariantKind.DateTime => DateTimeValue,
+                VariantKind.TimeSpan => DateTimeValue,
+                VariantKind.Enum => _refValue is EnumInfo info ? info.ConvertToObject(EnumLongValue) : null,
+                VariantKind.String => StringValue,
+                VariantKind.Object => ObjectValue,
+                _ => null
+            };
+
         public readonly override string ToString() =>
             Kind switch
             {
@@ -353,13 +393,14 @@ namespace Dumbo
                 VariantKind.DateOnly => DateOnlyValue.ToString(),
                 VariantKind.DateTime => DateTimeValue.ToString(),
                 VariantKind.TimeSpan => DateTimeValue.ToString(),
+                VariantKind.Enum => _refValue is EnumInfo info ? info.ConvertToEnumString(EnumLongValue) : "",
                 VariantKind.String => StringValue ?? "",
                 VariantKind.Object => ObjectValue?.ToString() ?? "",
                 _ => ""
             };
 
         public readonly bool Equals(Variant other) =>
-            Kind == other.Kind && 
+            Kind == other.Kind &&
             Kind switch
             {
                 VariantKind.Bool => BoolValue == other.BoolValue,
@@ -381,6 +422,7 @@ namespace Dumbo
                 VariantKind.TimeOnly => TimeOnlyValue == other.TimeOnlyValue,
                 VariantKind.DateTime => DateTimeValue == other.DateTimeValue,
                 VariantKind.TimeSpan => TimeSpanValue == other.TimeSpanValue,
+                VariantKind.Enum => EnumLongValue == other.EnumLongValue,
                 VariantKind.Object => (ObjectValue == other.ObjectValue) || (ObjectValue?.Equals(other) ?? false),
                 _ => false
             };
@@ -424,6 +466,7 @@ namespace Dumbo
                 VariantKind.TimeOnly => TimeOnlyValue.GetHashCode(),
                 VariantKind.DateTime => DateTimeValue.GetHashCode(),
                 VariantKind.TimeSpan => TimeSpanValue.GetHashCode(),
+                VariantKind.Enum => EnumLongValue.GetHashCode(),
                 VariantKind.Object => ObjectValue?.GetHashCode() ?? 0,
                 _ => 0
             };
@@ -585,6 +628,9 @@ namespace Dumbo
                         return true;
                     }
                     break;
+                case VariantKind.Enum:
+                    converted = EnumLongValue;
+                    return true;
                 case VariantKind.String:
                     return Int64.TryParse(StringValue, out converted);
             };
@@ -649,6 +695,9 @@ namespace Dumbo
                     return true;
                 case VariantKind.Decimal128:
                     converted = Decimal128Value;
+                    return true;
+                case VariantKind.Enum:
+                    converted = EnumLongValue;
                     return true;
                 case VariantKind.String:
                     return decimal.TryParse(StringValue, out converted);
@@ -799,6 +848,18 @@ namespace Dumbo
             return false;
         }
 
+        private bool TryConvertToEnum<TEnum>([NotNullWhen(true)] out TEnum value)
+        {
+            if (TryConvertToInt64(out var i64val)
+                && TryConvertLongToEnum(i64val, out value))
+            {
+                return true;
+            }
+
+            value = default!;
+            return false;
+        }
+
         private bool TryConvertToDecimal64(out Decimal64 value)
         {
             if (Kind == VariantKind.Decimal64)
@@ -942,39 +1003,13 @@ namespace Dumbo
             return false;
         }
 
-        public object? ToObject() =>
-            Kind switch
-            {
-                VariantKind.Bool => BoolValue,
-                VariantKind.Int8 => Int8Value,
-                VariantKind.Int16 => Int16Value,
-                VariantKind.Int32 => Int32Value,
-                VariantKind.Int64 => Int64Value,
-                VariantKind.UInt8 => UInt8Value,
-                VariantKind.UInt16 => UInt16Value,
-                VariantKind.UInt32 => UInt32Value,
-                VariantKind.UInt64 => UInt64Value,
-                VariantKind.Float32 => Float32Value,
-                VariantKind.Float64 => Float64Value,
-                VariantKind.Char16 => Char16Value,
-                VariantKind.Char32 => Char32Value,
-                VariantKind.Decimal64 => Decimal64Value,
-                VariantKind.Decimal128 => Decimal128Value,
-                VariantKind.DateOnly => DateOnlyValue,
-                VariantKind.DateTime => DateTimeValue,
-                VariantKind.TimeSpan => DateTimeValue,
-                VariantKind.String => StringValue,
-                VariantKind.Object => ObjectValue,
-                _ => null
-            };
-
         /// <summary>
         /// Attempts to convert the value into the specified type.
         /// Returns true if the value is successfully converted.
         /// </summary>
         public bool TryConvertTo<T>([NotNullWhen(true)] out T converted)
         {
-            var kind = GetKind(typeof(T));
+            var kind = GetKind<T>();
 
             switch (kind)
             {
@@ -1029,9 +1064,8 @@ namespace Dumbo
                 case VariantKind.TimeSpan when TryConvertToTimeSpan(out var tsval) && tsval is T tval:
                     converted = tval;
                     return true;
-                case VariantKind.String when ToString() is T tval:
-                    converted = tval;
-                    return true;
+                case VariantKind.Enum:
+                    return TryConvertToEnum(out converted);
                 case VariantKind.Object when ObjectValue is T tval:
                     converted = tval;
                     return true;                
@@ -1085,6 +1119,20 @@ namespace Dumbo
         {
             if (s_typeToKindMap.TryGetValue(type, out var kind))
                 return kind;
+
+            return VariantKind.Object;
+        }
+
+        private static VariantKind GetKind<TType>()
+        {
+            var type = typeof(TType);
+
+            if (s_typeToKindMap.TryGetValue(type, out var kind))
+                return kind;
+
+            if (type.IsEnum)
+                return GetEnumInfo<TType>().Kind;
+
             return VariantKind.Object;
         }
 
@@ -1155,6 +1203,7 @@ namespace Dumbo
             TimeSpan,
             String,
             Object,
+            Enum,
             Null
         }
 
@@ -1201,27 +1250,158 @@ namespace Dumbo
         private class OverlappedInfo
         {
             public VariantKind Kind { get; }
-            public OverlappedInfo(VariantKind kind) { this.Kind = kind; }
+            public Type Type { get; }
 
-            public static OverlappedInfo Bool = new OverlappedInfo(VariantKind.Bool);
-            public static OverlappedInfo Int8 = new OverlappedInfo(VariantKind.Int8);
-            public static OverlappedInfo Int16 = new OverlappedInfo(VariantKind.Int16);
-            public static OverlappedInfo Int32 = new OverlappedInfo(VariantKind.Int32);
-            public static OverlappedInfo Int64 = new OverlappedInfo(VariantKind.Int64);
-            public static OverlappedInfo UInt8 = new OverlappedInfo(VariantKind.UInt8);
-            public static OverlappedInfo UInt16 = new OverlappedInfo(VariantKind.UInt16);
-            public static OverlappedInfo UInt32 = new OverlappedInfo(VariantKind.UInt32);
-            public static OverlappedInfo UInt64 = new OverlappedInfo(VariantKind.UInt64);
-            public static OverlappedInfo Float32 = new OverlappedInfo(VariantKind.Float32);
-            public static OverlappedInfo Float64 = new OverlappedInfo(VariantKind.Float64);
-            public static OverlappedInfo Char16 = new OverlappedInfo(VariantKind.Char16);
-            public static OverlappedInfo Char32 = new OverlappedInfo(VariantKind.Char32);
-            public static OverlappedInfo Decimal64 = new OverlappedInfo(VariantKind.Decimal64);
-            public static OverlappedInfo Decimal128 = new OverlappedInfo(VariantKind.Decimal128);
-            public static OverlappedInfo DateOnly = new OverlappedInfo(VariantKind.DateOnly);
-            public static OverlappedInfo TimeOnly = new OverlappedInfo(VariantKind.TimeOnly);
-            public static OverlappedInfo DateTime = new OverlappedInfo(VariantKind.DateTime);
-            public static OverlappedInfo TimeSpan = new OverlappedInfo(VariantKind.TimeSpan);
+            public OverlappedInfo(VariantKind kind, Type type)
+            {
+                this.Kind = kind;
+                this.Type = type;
+            }
+
+            public static OverlappedInfo Bool = new OverlappedInfo(VariantKind.Bool, typeof(bool));
+            public static OverlappedInfo Int8 = new OverlappedInfo(VariantKind.Int8, typeof(sbyte));
+            public static OverlappedInfo Int16 = new OverlappedInfo(VariantKind.Int16, typeof(short));
+            public static OverlappedInfo Int32 = new OverlappedInfo(VariantKind.Int32, typeof(int));
+            public static OverlappedInfo Int64 = new OverlappedInfo(VariantKind.Int64, typeof(long));
+            public static OverlappedInfo UInt8 = new OverlappedInfo(VariantKind.UInt8, typeof(byte));
+            public static OverlappedInfo UInt16 = new OverlappedInfo(VariantKind.UInt16, typeof(ushort));
+            public static OverlappedInfo UInt32 = new OverlappedInfo(VariantKind.UInt32, typeof(uint));
+            public static OverlappedInfo UInt64 = new OverlappedInfo(VariantKind.UInt64, typeof(ulong));
+            public static OverlappedInfo Float32 = new OverlappedInfo(VariantKind.Float32, typeof(float));
+            public static OverlappedInfo Float64 = new OverlappedInfo(VariantKind.Float64, typeof(double));
+            public static OverlappedInfo Char16 = new OverlappedInfo(VariantKind.Char16, typeof(char));
+            public static OverlappedInfo Char32 = new OverlappedInfo(VariantKind.Char32, typeof(Rune));
+            public static OverlappedInfo Decimal64 = new OverlappedInfo(VariantKind.Decimal64, typeof(Decimal64));
+            public static OverlappedInfo Decimal128 = new OverlappedInfo(VariantKind.Decimal128, typeof(decimal));
+            public static OverlappedInfo DateOnly = new OverlappedInfo(VariantKind.DateOnly, typeof(DateOnly));
+            public static OverlappedInfo TimeOnly = new OverlappedInfo(VariantKind.TimeOnly, typeof(TimeOnly));
+            public static OverlappedInfo DateTime = new OverlappedInfo(VariantKind.DateTime, typeof(DateTime));
+            public static OverlappedInfo TimeSpan = new OverlappedInfo(VariantKind.TimeSpan, typeof(TimeSpan));
+        }
+
+        private abstract class EnumInfo : OverlappedInfo
+        {
+            public EnumInfo(Type type)
+                : base(VariantKind.Enum, type)
+            {
+            }
+
+            public abstract bool IsType<TType>(long enumLongValue);
+            public abstract object ConvertToObject(long enumLongValue);
+            public abstract string ConvertToEnumString(long enumLongValue);
+        }
+
+        private class EnumInfo<TEnum> : EnumInfo
+        {
+            public EnumInfo()
+                : base(typeof(TEnum))
+            {
+            }
+
+            public override bool IsType<TType>(long enumLongValue) =>
+                TryConvertLongToEnum<TEnum>(enumLongValue, out var enumValue) 
+                && enumValue is TType;
+
+            public override object ConvertToObject(long enumLongValue) =>
+                TryConvertLongToEnum<TEnum>(enumLongValue, out var enumValue)
+                    ? enumValue
+                    : default!;
+
+            public override string ConvertToEnumString(long enumLongValue) =>
+                TryConvertLongToEnum<TEnum>(enumLongValue, out var enumValue) 
+                    ? enumValue.ToString()!
+                    : "";
+        }
+
+        private static ImmutableDictionary<Type, OverlappedInfo> s_typeToInfoMap =
+            ImmutableDictionary<Type, OverlappedInfo>.Empty;
+
+        private static OverlappedInfo GetEnumInfo<TEnum>()
+        {
+            var map = s_typeToInfoMap;
+            var enumType = typeof(TEnum);
+            if (!map.TryGetValue(enumType, out var info))
+            {
+                info = ImmutableInterlocked.GetOrAdd(ref s_typeToInfoMap, enumType, new EnumInfo<TEnum>());
+            }
+            return info;
+        }
+
+        private static long ConvertEnumToLong<TEnum>(TEnum value)
+        {
+            var enumType = typeof(TEnum);
+            var kind = GetKind(enumType.GetEnumUnderlyingType());
+            return kind switch
+            {
+                VariantKind.Int8 => Unsafe.As<TEnum, sbyte>(ref value),
+                VariantKind.Int16 => Unsafe.As<TEnum, short>(ref value),
+                VariantKind.Int32 => Unsafe.As<TEnum, int>(ref value),
+                VariantKind.Int64 => Unsafe.As<TEnum, long>(ref value),
+                VariantKind.UInt8 => Unsafe.As<TEnum, byte>(ref value),
+                VariantKind.UInt16 => Unsafe.As<TEnum, ushort>(ref value),
+                VariantKind.UInt32 => Unsafe.As<TEnum, uint>(ref value),
+                VariantKind.UInt64 => unchecked((long)Unsafe.As<TEnum, ulong>(ref value)),
+                _ => 0
+            };
+        }
+
+        private static bool TryConvertLongToEnum<TEnum>(long value, [NotNullWhen(true)] out TEnum enumValue)
+        {
+            var enumType = typeof(TEnum);
+            if (enumType.IsEnum)
+            {
+                var kind = GetKind(enumType.GetEnumUnderlyingType());
+                switch (kind)
+                {
+                    case VariantKind.Int8 when value >= sbyte.MinValue && value <= sbyte.MaxValue:
+                        var i8val = (sbyte)value;
+                        enumValue = Unsafe.As<sbyte, TEnum>(ref i8val)!;
+                        return true;
+                    case VariantKind.Int16 when value >= short.MinValue && value <= short.MaxValue:
+                        var i16val = (short)value;
+                        enumValue = Unsafe.As<short, TEnum>(ref i16val)!;
+                        return true;
+                    case VariantKind.Int32 when value >= int.MinValue && value <= short.MaxValue:
+                        var i32val = (int)value;
+                        enumValue = Unsafe.As<int, TEnum>(ref i32val)!;
+                        return true;
+                    case VariantKind.Int64:
+                        enumValue = Unsafe.As<long, TEnum>(ref value)!;
+                        return true;
+                    case VariantKind.UInt8 when value >= byte.MinValue && value <= byte.MaxValue:
+                        var ui8val = (byte)value;
+                        enumValue = Unsafe.As<byte, TEnum>(ref ui8val)!;
+                        return true;
+                    case VariantKind.UInt16 when value >= ushort.MinValue && value <= ushort.MaxValue:
+                        var ui16val = (ushort)value;
+                        enumValue = Unsafe.As<ushort, TEnum>(ref ui16val)!;
+                        return true;
+                    case VariantKind.UInt32 when value >= uint.MinValue && value <= uint.MaxValue:
+                        var ui32val = (uint)value;
+                        enumValue = Unsafe.As<uint, TEnum>(ref ui32val)!;
+                        return true;
+                    case VariantKind.UInt64:
+                        var ui64val = unchecked((ulong)value);
+                        enumValue = Unsafe.As<ulong, TEnum>(ref ui64val)!;
+                        return true;
+                };
+            }
+
+            enumValue = default!;
+            return false;
+        }
+
+        private static Type GetNonNullableType(Type type)
+        {
+            if (type.IsValueType
+                && type.IsGenericType
+                && type.GetGenericTypeDefinition() is Type genericTypeDef
+                && genericTypeDef == typeof(Nullable<>))
+            {
+                return type.GetGenericArguments()[0];
+            }
+
+            return type;
         }
     }
 }
