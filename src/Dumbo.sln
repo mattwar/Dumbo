@@ -1,0 +1,37 @@
+﻿
+Microsoft Visual Studio Solution File, Format Version 12.00
+# Visual Studio Version 17
+VisualStudioVersion = 17.7.34009.444
+MinimumVisualStudioVersion = 10.0.40219.1
+Project("{9A19103F-16F7-4668-BE54-9A1E7A4F7556}") = "Dumbo", "Dumbo\Dumbo.csproj", "{625FF847-BC29-438F-9B84-ABAC218394AE}"
+EndProject
+Project("{FAE04EC0-301F-11D3-BF4B-00C04F79EFBC}") = "TryDumbo", "TryDumbo\TryDumbo.csproj", "{832711AC-32A3-4E0B-A7B5-5A8FE4D7A6B5}"
+EndProject
+Project("{FAE04EC0-301F-11D3-BF4B-00C04F79EFBC}") = "Tests", "Tests\Tests.csproj", "{4C9D8F12-73CB-4A9F-8B1D-C2A2803D1E4D}"
+EndProject
+Global
+	GlobalSection(SolutionConfigurationPlatforms) = preSolution
+		Debug|Any CPU = Debug|Any CPU
+		Release|Any CPU = Release|Any CPU
+	EndGlobalSection
+	GlobalSection(ProjectConfigurationPlatforms) = postSolution
+		{625FF847-BC29-438F-9B84-ABAC218394AE}.Debug|Any CPU.ActiveCfg = Debug|Any CPU
+		{625FF847-BC29-438F-9B84-ABAC218394AE}.Debug|Any CPU.Build.0 = Debug|Any CPU
+		{625FF847-BC29-438F-9B84-ABAC218394AE}.Release|Any CPU.ActiveCfg = Release|Any CPU
+		{625FF847-BC29-438F-9B84-ABAC218394AE}.Release|Any CPU.Build.0 = Release|Any CPU
+		{832711AC-32A3-4E0B-A7B5-5A8FE4D7A6B5}.Debug|Any CPU.ActiveCfg = Debug|Any CPU
+		{832711AC-32A3-4E0B-A7B5-5A8FE4D7A6B5}.Debug|Any CPU.Build.0 = Debug|Any CPU
+		{832711AC-32A3-4E0B-A7B5-5A8FE4D7A6B5}.Release|Any CPU.ActiveCfg = Release|Any CPU
+		{832711AC-32A3-4E0B-A7B5-5A8FE4D7A6B5}.Release|Any CPU.Build.0 = Release|Any CPU
+		{4C9D8F12-73CB-4A9F-8B1D-C2A2803D1E4D}.Debug|Any CPU.ActiveCfg = Debug|Any CPU
+		{4C9D8F12-73CB-4A9F-8B1D-C2A2803D1E4D}.Debug|Any CPU.Build.0 = Debug|Any CPU
+		{4C9D8F12-73CB-4A9F-8B1D-C2A2803D1E4D}.Release|Any CPU.ActiveCfg = Release|Any CPU
+		{4C9D8F12-73CB-4A9F-8B1D-C2A2803D1E4D}.Release|Any CPU.Build.0 = Release|Any CPU
+	EndGlobalSection
+	GlobalSection(SolutionProperties) = preSolution
+		HideSolutionNode = FALSE
+	EndGlobalSection
+	GlobalSection(ExtensibilityGlobals) = postSolution
+		SolutionGuid = {25694D77-6D97-4F07-B7F2-0619E404AD35}
+	EndGlobalSection
+EndGlobal
