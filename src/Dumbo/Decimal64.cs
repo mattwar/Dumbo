@@ -78,8 +78,8 @@ namespace Dumbo
             var scale = value.Scale;
             if (scale <= 15)
             {
-                var tens = (int)Math.Pow(10, Math.Abs(scale));
-                var magnitude = value * tens;
+                // get unscaled magnitude (which may be larger than can fit in long)
+                var magnitude = value * s_scaleFactor[scale];
 
                 if (magnitude >= MinMagnitude && magnitude <= MaxMagnitude)
                 {
@@ -91,6 +91,27 @@ namespace Dumbo
             dec64 = default;
             return false;
         }
+
+        // because indexing is faster than Math.Pow()
+        private static readonly long[] s_scaleFactor = new long[]
+        {
+            1,                  // 0
+            10,                 // 1
+            100,                // 2
+            1000,               // 3
+            10000,              // 4
+            100000,             // 5
+            1000000,            // 6
+            10000000,           // 7
+            100000000,          // 8
+            1000000000,         // 9
+            10000000000,        // 10
+            100000000000,       // 11
+            1000000000000,      // 12
+            10000000000000,     // 13
+            100000000000000,    // 14
+            1000000000000000    // 15
+        };
 
         /// <summary>
         /// Converts a <see cref="Int64"/> value to a <see cref="Decimal64"/>.
@@ -218,6 +239,9 @@ namespace Dumbo
 
         public static implicit operator decimal(Decimal64 dec64) =>
             dec64.ToDecimal();
+
+        public static implicit operator Decimal64(int value) =>
+            Convert(value);
 
         public static explicit operator Decimal64(decimal value) =>
             Convert(value);

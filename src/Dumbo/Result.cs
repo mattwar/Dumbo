@@ -4,7 +4,7 @@ namespace Dumbo
 {
     public enum ResultKind { Success, Failure };
 
-    public struct Result<S, E>
+    public struct Result<TValue, TError>
     {
         private readonly ResultKind _kind;
         private readonly Variant _value;
@@ -15,25 +15,25 @@ namespace Dumbo
             _value = value;
         }
 
-        public static Result<S, E> CreateSuccess(S value) => new Result<S, E>(ResultKind.Success, Variant.Create(value));
-        public static Result<S, E> CreateFailure(E error) => new Result<S, E>(ResultKind.Failure, Variant.Create(error));
+        public static Result<TValue, TError> Success(TValue value) => new Result<TValue, TError>(ResultKind.Success, Variant.Create(value));
+        public static Result<TValue, TError> Failure(TError error) => new Result<TValue, TError>(ResultKind.Failure, Variant.Create(error));
 
-        public static implicit operator Result<S, E>(S value) => new Result<S, E>(ResultKind.Success, Variant.Create(value));
-        public static implicit operator Result<S, E>(E error) => new Result<S, E>(ResultKind.Failure, Variant.Create(error));
+        public static implicit operator Result<TValue, TError>(TValue value) => new Result<TValue, TError>(ResultKind.Success, Variant.Create(value));
+        public static implicit operator Result<TValue, TError>(TError error) => new Result<TValue, TError>(ResultKind.Failure, Variant.Create(error));
 
         public ResultKind Kind => _kind;
 
         public bool IsSuccess => _kind == ResultKind.Success;
         public bool IsFailure => _kind == ResultKind.Failure;
 
-        public S SuccessValue => IsSuccess ? _value.AsType<S>() : default!;
-        public E FailureError => IsFailure ? _value.AsType<E>() : default!;
+        public TValue SuccessValue => IsSuccess ? _value.AsType<TValue>() : default!;
+        public TError FailureError => IsFailure ? _value.AsType<TError>() : default!;
 
-        public bool TryGetSuccess([NotNullWhen(true)] out S value)
+        public bool TryGetSuccess([NotNullWhen(true)] out TValue value)
         {
             if (IsSuccess)
             {
-                value = _value.Get<S>()!;
+                value = _value.Get<TValue>()!;
                 return true;
             }
 
@@ -41,11 +41,11 @@ namespace Dumbo
             return false;
         }
 
-        public bool TryGetFailure([NotNullWhen(true)] out E error)
+        public bool TryGetFailure([NotNullWhen(true)] out TError error)
         {
-            if (IsFailure && _value.TryGet<E>(out var f))
+            if (IsFailure && _value.TryGet<TError>(out var f))
             {
-                error = _value.Get<E>()!;
+                error = _value.Get<TError>()!;
                 return true;
             }
 

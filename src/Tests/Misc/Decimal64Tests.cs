@@ -20,6 +20,9 @@ namespace Tests.Misc
 
             TestConvert(Decimal64.MinMagnitude, new Decimal64(Decimal64.MinMagnitude, 0));
             TestConvert(Decimal64.MaxMagnitude, new Decimal64(Decimal64.MaxMagnitude, 0));
+
+            TestConvert(new Decimal64(Decimal64.MinMagnitude, 15).ToDecimal(), new Decimal64(Decimal64.MinMagnitude, 15));
+            TestConvert(new Decimal64(Decimal64.MaxMagnitude, 15).ToDecimal(), new Decimal64(Decimal64.MaxMagnitude, 15));
         }
 
         private void TestConvert(decimal value, Decimal64 expected)

@@ -6,7 +6,7 @@ using System.Text;
 namespace Dumbo
 {
     /// <summary>
-    /// A type union for any type that avoids boxing of most common primitive values.
+    /// A type union for an instance of any type that avoids boxing of most common primitive values.
     /// </summary>
     [DebuggerDisplay("{DebugText}")]
     public readonly struct Variant : IEquatable<Variant>, ITypeUnion
@@ -22,7 +22,7 @@ namespace Dumbo
             _structValue = structValue;
         }
 
-        public readonly VariantKind Kind
+        private readonly VariantKind Kind
         {
             get
             {
@@ -97,12 +97,13 @@ namespace Dumbo
             }
             else
             {
-                // otherwise box
-                return new Variant((object)value, default);
+                // otherwise box as object
+                return new Variant(value, default);
             }
         }
 
-        public static Variant Create(object? value) => Create<object>(value!);
+        public static Variant Create(object? value) => 
+            Create<object>(value!);
 
         public static Variant Create<T>(T? value)
         {
@@ -517,98 +518,6 @@ namespace Dumbo
         public static implicit operator DateTime?(Variant value) => value.ConvertToOrDefault<DateTime?>();
         public static implicit operator TimeSpan?(Variant value) => value.ConvertToOrDefault<TimeSpan?>();
         public static implicit operator Guid?(Variant value) => value.ConvertToOrDefault<Guid?>();
-
-        [StructLayout(LayoutKind.Explicit)]
-        struct Overlapped
-        {
-            [FieldOffset(0)]
-            public bool Bool;
-
-            [FieldOffset(0)]
-            public sbyte Int8;
-
-            [FieldOffset(0)]
-            public byte UInt8;
-
-            [FieldOffset(0)]
-            public short Int16;
-
-            [FieldOffset(0)]
-            public ushort UInt16;
-
-            [FieldOffset(0)]
-            public int Int32;
-
-            [FieldOffset(0)]
-            public uint UInt32;
-
-            [FieldOffset(0)]
-            public long Int64;
-
-            [FieldOffset(0)]
-            public ulong UInt64;
-
-            [FieldOffset(0)]
-            public float Float32;
-
-            [FieldOffset(0)]
-            public double Float64;
-
-            [FieldOffset(0)]
-            public char Char16;
-        }
-
-        public enum VariantKind
-        {
-            Bool,
-            Int8,
-            Int16,
-            Int32,
-            Int64,
-            UInt8,
-            UInt16,
-            UInt32,
-            UInt64,
-            Float32,
-            Float64,
-            Char16,
-            Char32,
-            Decimal64,
-            Decimal128,
-            DateOnly,
-            TimeOnly,
-            DateTime,
-            TimeSpan,
-            String,
-            Object,
-            Null
-        }
-
-        private class OverlappedInfo
-        {
-            public VariantKind Kind { get; }
-            public OverlappedInfo(VariantKind kind) { this.Kind = kind; }
-
-            public static OverlappedInfo Bool = new OverlappedInfo(VariantKind.Bool);
-            public static OverlappedInfo Int8 = new OverlappedInfo(VariantKind.Int8);
-            public static OverlappedInfo Int16 = new OverlappedInfo(VariantKind.Int16);
-            public static OverlappedInfo Int32 = new OverlappedInfo(VariantKind.Int32);
-            public static OverlappedInfo Int64 = new OverlappedInfo(VariantKind.Int64);
-            public static OverlappedInfo UInt8 = new OverlappedInfo(VariantKind.UInt8);
-            public static OverlappedInfo UInt16 = new OverlappedInfo(VariantKind.UInt16);
-            public static OverlappedInfo UInt32 = new OverlappedInfo(VariantKind.UInt32);
-            public static OverlappedInfo UInt64 = new OverlappedInfo(VariantKind.UInt64);
-            public static OverlappedInfo Float32 = new OverlappedInfo(VariantKind.Float32);
-            public static OverlappedInfo Float64 = new OverlappedInfo(VariantKind.Float64);
-            public static OverlappedInfo Char16 = new OverlappedInfo(VariantKind.Char16);
-            public static OverlappedInfo Char32 = new OverlappedInfo(VariantKind.Char32);
-            public static OverlappedInfo Decimal64 = new OverlappedInfo(VariantKind.Decimal64);
-            public static OverlappedInfo Decimal128 = new OverlappedInfo(VariantKind.Decimal128);
-            public static OverlappedInfo DateOnly = new OverlappedInfo(VariantKind.DateOnly);
-            public static OverlappedInfo TimeOnly = new OverlappedInfo(VariantKind.TimeOnly);
-            public static OverlappedInfo DateTime = new OverlappedInfo(VariantKind.DateTime);
-            public static OverlappedInfo TimeSpan = new OverlappedInfo(VariantKind.TimeSpan);
-        }
 
         private bool TryConvertToInt64(out long converted)
         {
@@ -1222,5 +1131,97 @@ namespace Dumbo
             { typeof(DateTime?), VariantKind.DateTime },
             { typeof(TimeSpan?), VariantKind.TimeSpan },
         };
+
+        private enum VariantKind
+        {
+            Bool,
+            Int8,
+            Int16,
+            Int32,
+            Int64,
+            UInt8,
+            UInt16,
+            UInt32,
+            UInt64,
+            Float32,
+            Float64,
+            Char16,
+            Char32,
+            Decimal64,
+            Decimal128,
+            DateOnly,
+            TimeOnly,
+            DateTime,
+            TimeSpan,
+            String,
+            Object,
+            Null
+        }
+
+        [StructLayout(LayoutKind.Explicit)]
+        struct Overlapped
+        {
+            [FieldOffset(0)]
+            public bool Bool;
+
+            [FieldOffset(0)]
+            public sbyte Int8;
+
+            [FieldOffset(0)]
+            public byte UInt8;
+
+            [FieldOffset(0)]
+            public short Int16;
+
+            [FieldOffset(0)]
+            public ushort UInt16;
+
+            [FieldOffset(0)]
+            public int Int32;
+
+            [FieldOffset(0)]
+            public uint UInt32;
+
+            [FieldOffset(0)]
+            public long Int64;
+
+            [FieldOffset(0)]
+            public ulong UInt64;
+
+            [FieldOffset(0)]
+            public float Float32;
+
+            [FieldOffset(0)]
+            public double Float64;
+
+            [FieldOffset(0)]
+            public char Char16;
+        }
+
+        private class OverlappedInfo
+        {
+            public VariantKind Kind { get; }
+            public OverlappedInfo(VariantKind kind) { this.Kind = kind; }
+
+            public static OverlappedInfo Bool = new OverlappedInfo(VariantKind.Bool);
+            public static OverlappedInfo Int8 = new OverlappedInfo(VariantKind.Int8);
+            public static OverlappedInfo Int16 = new OverlappedInfo(VariantKind.Int16);
+            public static OverlappedInfo Int32 = new OverlappedInfo(VariantKind.Int32);
+            public static OverlappedInfo Int64 = new OverlappedInfo(VariantKind.Int64);
+            public static OverlappedInfo UInt8 = new OverlappedInfo(VariantKind.UInt8);
+            public static OverlappedInfo UInt16 = new OverlappedInfo(VariantKind.UInt16);
+            public static OverlappedInfo UInt32 = new OverlappedInfo(VariantKind.UInt32);
+            public static OverlappedInfo UInt64 = new OverlappedInfo(VariantKind.UInt64);
+            public static OverlappedInfo Float32 = new OverlappedInfo(VariantKind.Float32);
+            public static OverlappedInfo Float64 = new OverlappedInfo(VariantKind.Float64);
+            public static OverlappedInfo Char16 = new OverlappedInfo(VariantKind.Char16);
+            public static OverlappedInfo Char32 = new OverlappedInfo(VariantKind.Char32);
+            public static OverlappedInfo Decimal64 = new OverlappedInfo(VariantKind.Decimal64);
+            public static OverlappedInfo Decimal128 = new OverlappedInfo(VariantKind.Decimal128);
+            public static OverlappedInfo DateOnly = new OverlappedInfo(VariantKind.DateOnly);
+            public static OverlappedInfo TimeOnly = new OverlappedInfo(VariantKind.TimeOnly);
+            public static OverlappedInfo DateTime = new OverlappedInfo(VariantKind.DateTime);
+            public static OverlappedInfo TimeSpan = new OverlappedInfo(VariantKind.TimeSpan);
+        }
     }
 }
