@@ -1,6 +1,6 @@
 ﻿using System.Diagnostics.CodeAnalysis;
 
-namespace Dumbo.TypeUnion.Overlapped;
+namespace Dumbo.TypeUnions.Overlapped;
 
 // pre-exising types
 public record struct Some<TValue>(TValue value);

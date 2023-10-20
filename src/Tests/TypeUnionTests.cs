@@ -1,39 +1,57 @@
 ﻿using Dumbo;
-using Dumbo.TypeUnions;
+using System.Drawing;
 
-namespace Tests
+namespace Tests;
+
+[TestClass]
+public class TypeUnionTests
 {
-    [TestClass]
-    public class TypeUnionTests
+    public record Apple(string name);
+    public record struct Orange(string name);
+
+    [TestMethod]
+    public void TestOneOf()
     {
-        public record Apple(string name);
-        public record struct Orange(string name);
+        TestUnion<Dumbo.TypeUnions.Existing.Fat.OneOf<int, string, Point>>()
+            .Value(1)
+            .Value("One")
+            .Value(new Point(1, 1));
 
-        [TestMethod]
-        public void TestOneOf()
-        {
-            TestOneOf<Dumbo.TypeUnions.Existing.Fat.OneOf<int, string>>();
-            TestOneOf<Dumbo.TypeUnions.Existing.Boxed.OneOf<int, string>>();
-            TestOneOf<Dumbo.TypeUnions.Existing.Hybrid.OneOf<int, string>>();
-        }
+        TestUnion<Dumbo.TypeUnions.Existing.Boxed.OneOf<int, string, Point>>()
+            .Value(1)
+            .Value("One")
+            .Value(new Point(1, 1));
 
-        private void TestOneOf<TOneOf>()
-            where TOneOf : ITypeUnion<TOneOf>
-        {
-            TestUnion<TOneOf>.TestValue(1);
-            TestUnion<TOneOf>.TestValue("one");
-        }
+        TestUnion<Dumbo.TypeUnions.Existing.Hybrid.OneOf<int, string, Point>>()
+            .Value(1)
+            .Value("One")
+            .Value(new Point(1, 1));
+    }
 
-        private static class TestUnion<TUnion>
-            where TUnion : ITypeUnion<TUnion>
+    [TestMethod]
+    public void TestCatOrDog()
+    {
+    }
+
+    private UnionTester<TUnion> TestUnion<TUnion>()
+        where TUnion : ITypeUnion<TUnion> 
+    {
+        return new UnionTester<TUnion>();
+    }
+
+    private class UnionTester<TUnion>
+        where TUnion : ITypeUnion<TUnion>
+    {
+        /// <summary>
+        /// That the union can be created with the value, type tested and retrieved back as the same value.
+        /// </summary>
+        public UnionTester<TUnion> Value<TValue>(TValue expected)
         {
-            public static void TestValue<TValue>(TValue expected)
-            {
-                var oneOf1 = TUnion.Create(expected);
-                Assert.IsTrue(oneOf1.IsType<TValue>());
-                Assert.IsTrue(oneOf1.TryGet<TValue>(out var actual1));
-                Assert.AreEqual(expected, actual1);
-            }
+            var oneOf1 = TUnion.Create(expected);
+            Assert.IsTrue(oneOf1.IsType<TValue>());
+            Assert.IsTrue(oneOf1.TryGet<TValue>(out var actual1));
+            Assert.AreEqual(expected, actual1);
+            return this;
         }
     }
 }
