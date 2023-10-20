@@ -1,4 +1,5 @@
 ﻿using Dumbo;
+using Dumbo.TypeUnions.Existing.Hybrid;
 
 OneOf<Fruit, Vegetable> a = Fruit.Apple;
 OneOf<Fruit, Vegetable> b = Vegetable.Carrot;

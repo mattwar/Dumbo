@@ -1,6 +1,6 @@
 ﻿using Dumbo;
 
-namespace Tests.Misc
+namespace Tests
 {
     [TestClass]
     public class Decimal64Tests

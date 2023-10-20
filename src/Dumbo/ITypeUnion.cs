@@ -7,16 +7,6 @@ using System.Threading.Tasks;
 
 namespace Dumbo
 {
-    public class TypeUnionAttribute : Attribute
-    {
-        public IReadOnlyList<Type> Types { get; }
-
-        public TypeUnionAttribute(params Type[] types)
-        {
-            this.Types = types;
-        }
-    }
-
     public interface ITypeUnion
     {
         //Type? Type { get; }
@@ -28,7 +18,19 @@ namespace Dumbo
 
     public interface ITypeUnion<TSelf> : ITypeUnion
     {
-        abstract static bool TryConvertFrom<T>(T value, [NotNullWhen(true)] out TSelf converted);
-        abstract static TSelf ConvertFrom<T>(T value);
+        abstract static bool TryCreate<T>(T value, [NotNullWhen(true)] out TSelf union);
+        abstract static TSelf Create<T>(T value);
     }
+
+#if false
+    public class TypeUnionAttribute : Attribute
+    {
+        public IReadOnlyList<Type> Types { get; }
+
+        public TypeUnionAttribute(params Type[] types)
+        {
+            this.Types = types;
+        }
+    }
+#endif
 }

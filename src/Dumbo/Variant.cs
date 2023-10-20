@@ -11,7 +11,7 @@ namespace Dumbo
     /// A type union for an instance of any type that avoids boxing of most common primitive values.
     /// </summary>
     [DebuggerDisplay("{DebugText}")]
-    public readonly struct Variant : IEquatable<Variant>, ITypeUnion
+    public readonly struct Variant : IEquatable<Variant>, ITypeUnion<Variant>
     {
         private string DebugText => ToString();
 
@@ -83,6 +83,12 @@ namespace Dumbo
 
         public static Variant Create(object? value) => 
             Create<object>(value!);
+
+        public static bool TryCreate<T>(T value, [NotNullWhen(true)] out Variant result)
+        {
+            result = Create(value);
+            return true;
+        }
 
         public static Variant Create<T>(T? value)
         {
@@ -427,7 +433,7 @@ namespace Dumbo
                 _ => false
             };
 
-        public readonly bool Equals<T>(T other) where T : IEquatable<T>
+        public readonly bool Equals<T>(T? other)
         {
             if (other is Variant vother)
             {
@@ -437,12 +443,16 @@ namespace Dumbo
             {
                 return tval.Equals(other);
             }
+            else if (other is ITypeUnion union && union.TryGet<object>(out var obj))
+            {
+                return object.Equals(ToObject(), obj);
+            }
 
             return false;
         }
 
-        public readonly override bool Equals([NotNullWhen(true)] object? obj) =>
-            obj is Variant other && Equals(other);
+        public readonly override bool Equals([NotNullWhen(true)] object? other) =>
+            Equals<object?>(other);
 
         public readonly override int GetHashCode() =>
             Kind switch
@@ -1391,6 +1401,7 @@ namespace Dumbo
             return false;
         }
 
+#if false
         private static Type GetNonNullableType(Type type)
         {
             if (type.IsValueType
@@ -1403,5 +1414,6 @@ namespace Dumbo
 
             return type;
         }
+#endif
     }
 }
