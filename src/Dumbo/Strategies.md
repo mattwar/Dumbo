@@ -13,7 +13,7 @@ When none of the states has any associated values, it acts similar to a C# enum.
 The implementation strategies differ on:
 >- **Footprint** - the amount of memory the union consumes on the stack or within another type.
 >- **Allocation** - the amount of allocation required when the union is constructed.
->- **Tearing** - whether partial assignment is visible during multi-threadeding.
+>- **Tearing** - whether partial assignments are visible during multi-threading.
 >- **Default** - the union's state when assigned from default.
 
 - ### Fat  
@@ -250,7 +250,7 @@ to one of a set of types.
 The implementation strategies differ on:  
 >- **Footprint** - the amount of memory the union consumes on the stack or within another type.  
 >- **Allocation** - the amount of allocation required when the union is constructed.  
->- **Tearing** - whether partial assignment is visible during multi-threadeding.
+>- **Tearing** - whether partial assignments are visible during multi-threading.
 >- **Default** - the union's state when assigned from default.
 >- **Untyped Matching** - if member type matching is possible when the union value is typed as object or generic.
 >- **Interop** - Whether the union can be used in other dotnet languages.
