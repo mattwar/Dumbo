@@ -263,7 +263,7 @@ The implementation strategies differ on:
     >It has the largest footprint, since it must include space for all the possible member types.  
     >It never allocates.  
     >It is possible for tearing to occur.  
-    >It is undefined when assigned from default.
+    >It is undefined when assigned from default.  
     >It cannot be matched from object or generic.  
     >It can be used in other dotnet languages, since it has a common language API.
 
