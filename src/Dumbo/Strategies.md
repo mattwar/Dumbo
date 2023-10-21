@@ -10,7 +10,7 @@ A tagged union is a type that may exists in one of many named states (**tags**)
 and for each state may contain a set of associated values that differ depending on that state. 
 When none of the states has any associated values, it acts similar to a C# enum.
 
->>The different implementation strategies differ on:
+The different implementation strategies differ on:
 >>- **Footprint** - the amount of memory the union consumes on the stack or within another type.
 >>- **Allocation** - the amount of allocation required when the union is constructed.
 >>- **Tearing** - wether tearing is possible when assigning unions to locations that are visible to multiple threads.
@@ -184,7 +184,7 @@ When none of the states has any associated values, it acts similar to a C# enum.
 - ### Hidden (Heirarchy)
 
     This tagged union is implemented as a record
-    with private nested derived records for each tag state and assocated values.  
+    with private nested derived records for each tag state and associated values.  
 
     It has the smallest footprint (8 bytes).  
     It always allocates.  
@@ -233,7 +233,7 @@ It differs from a tagged union in that there is no named state other than the ty
 A type union is often used as a constraint to limit the values of a variable or parameter
 to one of a set of types.
 
->>The different implementation strategies differ on:  
+The different implementation strategies differ on:  
 >>- **Footprint** - the amount of memory the union consumes on the stack or within another type.  
 >>- **Allocation** - the amount of allocation required when the union is constructed.  
 >>- **Tearing** - wether tearing is possible when assigning unions to locations that are visible to multiple threads.
@@ -242,7 +242,7 @@ to one of a set of types.
 
 - ### Fat
 
-    This type union is implemented as a field for each possible member type of the union.  
+    This type union is implemented as a struct with a field for each possible member type of the union.  
     and an enum field for determining which type and field is in use.
   
     It has the largest footprint, since it must include space for all the possible member types.  
@@ -271,12 +271,12 @@ to one of a set of types.
 
 - ### Boxed
 
-    This type union is implemented as a generated struct with a single object field.
+    This type union is implemented as a struct with a single object field.
 
     It has the smallest footprint (8 bytes).  
     It may allocate due to boxing.  
     It is not possible for tearing to occur.  
-    It is undefined when assigned from default.
+    It is undefined when assigned from default.  
     It cannot be matched from object or generic.  
 
     ```
@@ -318,9 +318,8 @@ to one of a set of types.
 
 - ### Overlapped
 
-    This type union is implemented as a struct with a layout similar to tagged union overlapped style.
-
-    It only works for types that are record structs.  
+    This type union is implemented as a struct with a layout similar to tagged union overlapped style.  
+    It only works for member types that are record structs.  
 
     It has a footprint that is less than or equal to **Fat**.  
     It never allocates.  
@@ -359,8 +358,8 @@ to one of a set of types.
 
     This type union is implemented with an existing type like OneOf<T1, T2>.  
 
-    It depends on the implementation of an existing type.  
-    It's impementation cannot vary due to member types.  
+    It depends on the implementation of the existing type.  
+    It cannot be optimized for specific member types.  
     It may be limited to the number of member types that can be included in the union.  
     It is undefined when assigned from default.
     It cannot be matched from object or generic.  
@@ -372,13 +371,12 @@ to one of a set of types.
 - ### Erasure
 
     This type union is implemented as an object reference via erasure.  
-
     It must use means other than the type system to encode the member types of the union.  
 
-    It has the smallest footprint (8 bytes).
+    It has the smallest footprint (8 bytes).  
     It may allocate due to boxing.  
-    It is not possible for tearing to occur.
-    It is null when assigned from default.
+    It is not possible for tearing to occur.  
+    It is null when assigned from default.  
     It can be matched from object or generic.  
 
     ```
