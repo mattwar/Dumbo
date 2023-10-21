@@ -10,10 +10,10 @@ A tagged union is a type that may exists in one of many named states (**tags**)
 and for each state may contain a set of associated values that differ depending on that state. 
 When none of the states has any associated values, it acts similar to a C# enum.
 
-The different implementation strategies differ on:
+The implementation strategies differ on:
 >>- **Footprint** - the amount of memory the union consumes on the stack or within another type.
 >>- **Allocation** - the amount of allocation required when the union is constructed.
->>- **Tearing** - wether tearing is possible when assigning unions to locations that are visible to multiple threads.
+>>- **Tearing** - whether tearing is possible when assigning unions to locations that are visible to multiple threads.
 >>- **Default** - the union's state when assigned from default.
 
 - ### Fat  
@@ -233,10 +233,10 @@ It differs from a tagged union in that there is no named state other than the ty
 A type union is often used as a constraint to limit the values of a variable or parameter
 to one of a set of types.
 
-The different implementation strategies differ on:  
+The implementation strategies differ on:  
 >>- **Footprint** - the amount of memory the union consumes on the stack or within another type.  
 >>- **Allocation** - the amount of allocation required when the union is constructed.  
->>- **Tearing** - wether tearing is possible when assigning unions to locations that are visible to multiple threads.
+>>- **Tearing** - whether tearing is possible when assigning unions to locations that are visible to multiple threads.
 >>- **Default** - the union's state when assigned from default.
 >>- **Untyped Matching** - if member type matching is possible when the union value is typed as object or generic.
 
