@@ -37,8 +37,8 @@ The implementation strategies differ on:
     
         enum Tag { Tag1 = 1, Tag2, ... }          
 
-        public static Union Tag1(TA v1, TB v2) { ... };
-        public static Union Tag2(TA v2, TC v2, TC v3) { ... };
+        public static TagUnion Tag1(TA v1, TB v2) { ... };
+        public static TagUnion Tag2(TA v2, TC v2, TC v3) { ... };
 
         public IsTag1 => _tag == Tag.Tag1;
         public IsTag2 => _tag == Tag.Tag2;
@@ -69,8 +69,8 @@ The implementation strategies differ on:
 
         enum Tag { Tag1 = 1, Tag2, ... }          
 
-        public static Union Tag1(TA v1, TB v2) { ... };
-        public static Union Tag2(TA v1, TC v2, TC v3) { ... };
+        public static TagUnion Tag1(TA v1, TB v2) { ... };
+        public static TagUnion Tag2(TA v1, TC v2, TC v3) { ... };
 
         public IsTag1 => _tag == Tag.Tag1;
         public IsTag2 => _tag == Tag.Tag2;
@@ -109,8 +109,8 @@ The implementation strategies differ on:
         struct OverlappedTag2Refs { ... }
         struct OverlappedTag2Vals { ... }
 
-        public static Union Tag1(TA v1, TB v2) { ... };
-        public static Union Tag2(TA v2, TC v2, TC v3) { ... };
+        public static TagUnion Tag1(TA v1, TB v2) { ... };
+        public static TagUnion Tag2(TA v2, TC v2, TC v3) { ... };
 
         public IsTag1 => _tag == Tag.Tag1;
         public IsTag2 => _tag == Tag.Tag2;
@@ -139,8 +139,8 @@ The implementation strategies differ on:
 
         enum Tag { Tag1 = 1, Tag2, ... }          
 
-        public static Union Tag1(TA v1, TB v2) { ... };
-        public static Union Tag2(TA v2, TC v2, TC v3) { ... };
+        public static TagUnion Tag1(TA v1, TB v2) { ... };
+        public static TagUnion Tag2(TA v2, TC v2, TC v3) { ... };
 
         public IsTag1 => _tag == Tag.Tag1;
         public IsTag2 => _tag == Tag.Tag2;
@@ -170,8 +170,8 @@ The implementation strategies differ on:
 
         enum Tag { Tag1 = 1, Tag2, ... }          
 
-        public static Union Tag1(TA v1, TB v2) { ... };
-        public static Union Tag2(TA v2, TC v2, TC v3) { ... };
+        public static TagUnion Tag1(TA v1, TB v2) { ... };
+        public static TagUnion Tag2(TA v2, TC v2, TC v3) { ... };
 
         public IsTag1 => _tag == Tag.Tag1;
         public IsTag2 => _tag == Tag.Tag2;
@@ -196,8 +196,8 @@ The implementation strategies differ on:
         private record Tag1Data(TA v1, TB v2) : Union;
         private record Tag2Data(TA v1, TC v2, TC v3) : Union;
 
-        public static Union Tag1(TA v1, TB v2) => new Tag1Data(v1, v2);
-        public static Union Tag2(TA v1, TC v2, TC v3) new Tag2Data(v1, v2, v3);
+        public static TagUnion Tag1(TA v1, TB v2) => new Tag1Data(v1, v2);
+        public static TagUnion Tag2(TA v1, TC v2, TC v3) new Tag2Data(v1, v2, v3);
 
         public bool IsTag1 => this is Tag1Data;
         public bool IsTag2 => this is Tag2Data;
@@ -276,9 +276,9 @@ The implementation strategies differ on:
 
         enum Tag { Type1 = 1, Type2, Type3 }
 
-        public static Union Create(T1 value) => ...;
-        public static Union Create(T2 value) => ...;
-        public static Union Create(T3 value) => ...;
+        public static TypeUnion Create(T1 value) => ...;
+        public static TypeUnion Create(T2 value) => ...;
+        public static TypeUnion Create(T3 value) => ...;
 
         public IsType<T>() { ... }
         public bool TryGet<T>(out T value) { ... };
@@ -300,9 +300,9 @@ The implementation strategies differ on:
     struct TypeUnion {
         object _value;
 
-        public static Union Create(T1 value) => ...;
-        public static Union Create(T2 value) => ...;
-        public static Union Create(T3 value) => ...;
+        public static TypeUnion Create(T1 value) => ...;
+        public static TypeUnion Create(T2 value) => ...;
+        public static TypeUnion Create(T3 value) => ...;
 
         public bool IsType<T>() => _value is T;
         public bool TryGet<T>(out T value) { ... }
@@ -325,9 +325,9 @@ The implementation strategies differ on:
     struct TypeUnion {
         hybrid _value;
 
-        public static Union Create(T1 value) => ...;
-        public static Union Create(T2 value) => ...;
-        public static Union Create(T3 value) => ...;
+        public static TypeUnion Create(T1 value) => ...;
+        public static TypeUnion Create(T2 value) => ...;
+        public static TypeUnion Create(T3 value) => ...;
 
         public bool IsType<T>() => _value is T;
         public bool TryGet<T>(out T value) { ... }
@@ -365,8 +365,8 @@ The implementation strategies differ on:
         struct OverlappedTag2Refs { ... }
         struct OverlappedTag2Vals { ... }
 
-        public static Union Type1(Type1 value) { ... };
-        public static Union Type2(Type2 value) { ... };
+        public static TypeUnion Type1(Type1 value) { ... };
+        public static TypeUnion Type2(Type2 value) { ... };
 
         public bool IsType<T1>() { ... };
         public bool TryGet<T>(out T value) { ... };
