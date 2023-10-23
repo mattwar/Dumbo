@@ -18,7 +18,7 @@ public readonly struct CatOrDog
     public static CatOrDog Cat(string name, int sleepingSpots) =>
         new CatOrDog(Kind.Cat, name, sleepingSpots);
 
-    public static CatOrDog Dot(string name, bool isTrained) =>
+    public static CatOrDog Dog(string name, bool isTrained) =>
         new CatOrDog(Kind.Dog, name, isTrained);
 
     public bool IsCat => _kind == Kind.Cat;
@@ -57,7 +57,7 @@ public readonly struct CatOrDog
             ? (name, sleepingSpots)
             : throw new InvalidCastException();
 
-    public (string name, bool isTrained) GetDot() =>
+    public (string name, bool isTrained) GetDog() =>
         TryGetDog(out var name, out var isTrained)
             ? (name, isTrained)
             : throw new InvalidCastException();
