@@ -33,7 +33,7 @@ The implementation strategies differ on:
         TB _tag1_value2;
         TA _tag2_value1;
         TC _tag2_value2;
-        TC _tag3_value3;
+        TC _tag2_value3;
     
         enum Tag { Tag1 = 1, Tag2, ... }          
 
