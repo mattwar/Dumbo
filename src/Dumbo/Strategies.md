@@ -38,7 +38,7 @@ The implementation strategies differ on:
         enum Tag { Tag1 = 1, Tag2, ... }          
 
         public static TagUnion Tag1(TA v1, TB v2) { ... };
-        public static TagUnion Tag2(TA v2, TC v2, TC v3) { ... };
+        public static TagUnion Tag2(TA v1, TC v2, TC v3) { ... };
 
         public IsTag1 => _tag == Tag.Tag1;
         public IsTag2 => _tag == Tag.Tag2;

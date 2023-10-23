@@ -17,7 +17,7 @@ public readonly struct OneOf<T1, T2> : ITypeUnion<OneOf<T1, T2>>
     }
 
     public static OneOf<T1, T2> Create(T1 value) =>
-    new OneOf<T1, T2>(value!);
+        new OneOf<T1, T2>(value!);
 
     public static OneOf<T1, T2> Create(T2 value) =>
         new OneOf<T1, T2>(value!);
