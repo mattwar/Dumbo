@@ -11,7 +11,7 @@ namespace Dumbo;
 /// A type union for an instance of any type that avoids boxing of most common primitive values.
 /// </summary>
 [DebuggerDisplay("{DebugText}")]
-public readonly struct Variant : IEquatable<Variant>, ITypeUnion<Variant>
+public readonly struct Variant : ITypeUnion<Variant> //, IEquatable<Variant>
 {
     private string DebugText => ToString();
 
@@ -24,61 +24,62 @@ public readonly struct Variant : IEquatable<Variant>, ITypeUnion<Variant>
         _structValue = structValue;
     }
 
-    public static readonly Variant Null = new Variant(null, default);
+    public static readonly Variant Null =
+        new Variant(null, default);
 
     public static Variant Create(bool value) => 
-        new Variant(OverlappedInfo.Bool, new Overlapped { Bool = value });
+        new Variant(VariantInfo.Bool, new Overlapped { Bool = value });
 
     public static Variant Create(sbyte value) =>
-        new Variant(OverlappedInfo.Int8, new Overlapped { Int8 = value });
+        new Variant(VariantInfo.Int8, new Overlapped { Int8 = value });
 
     public static Variant Create(short value) =>
-        new Variant(OverlappedInfo.Int16, new Overlapped { Int16 = value });
+        new Variant(VariantInfo.Int16, new Overlapped { Int16 = value });
 
     public static Variant Create(int value) => 
-        new Variant(OverlappedInfo.Int32, new Overlapped { Int32 = value });
+        new Variant(VariantInfo.Int32, new Overlapped { Int32 = value });
 
     public static Variant Create(long value) =>
-        new Variant(OverlappedInfo.Int64, new Overlapped { Int64 = value });
+        new Variant(VariantInfo.Int64, new Overlapped { Int64 = value });
 
     public static Variant Create(byte value) =>
-        new Variant(OverlappedInfo.UInt8, new Overlapped { UInt8 = value });
+        new Variant(VariantInfo.UInt8, new Overlapped { UInt8 = value });
 
     public static Variant Create(ushort value) =>
-        new Variant(OverlappedInfo.UInt16, new Overlapped { UInt16 = value });
+        new Variant(VariantInfo.UInt16, new Overlapped { UInt16 = value });
 
     public static Variant Create(uint value) =>
-        new Variant(OverlappedInfo.UInt32, new Overlapped { UInt32 = value });
+        new Variant(VariantInfo.UInt32, new Overlapped { UInt32 = value });
 
     public static Variant Create(ulong value) =>
-        new Variant(OverlappedInfo.UInt64, new Overlapped { UInt64 = value });
+        new Variant(VariantInfo.UInt64, new Overlapped { UInt64 = value });
 
     public static Variant Create(float value) =>
-        new Variant(OverlappedInfo.Float32, new Overlapped { Float32 = value });
+        new Variant(VariantInfo.Float32, new Overlapped { Float32 = value });
 
     public static Variant Create(double value) =>
-        new Variant(OverlappedInfo.Float64, new Overlapped { Float64 = value });
+        new Variant(VariantInfo.Float64, new Overlapped { Float64 = value });
 
     public static Variant Create(char value) =>
-        new Variant(OverlappedInfo.Char16, new Overlapped { Char16 = value });
+        new Variant(VariantInfo.Char16, new Overlapped { Char16 = value });
 
     public static Variant Create(Rune value) =>
-        new Variant(OverlappedInfo.Char32, new Overlapped { Int32 = value.Value });
+        new Variant(VariantInfo.Char32, new Overlapped { Int32 = value.Value });
 
     public static Variant Create(Decimal64 value) =>
-        new Variant(OverlappedInfo.Decimal64, new Overlapped { Int64 = value.GetBits() });
+        new Variant(VariantInfo.Decimal64, new Overlapped { Int64 = value.GetBits() });
 
     public static Variant Create(DateOnly value) =>
-        new Variant(OverlappedInfo.DateOnly, new Overlapped { Int32 = value.DayNumber });
+        new Variant(VariantInfo.DateOnly, new Overlapped { Int32 = value.DayNumber });
 
     public static Variant Create(TimeOnly value) =>
-        new Variant(OverlappedInfo.TimeOnly, new Overlapped { Int64 = value.Ticks });
+        new Variant(VariantInfo.TimeOnly, new Overlapped { Int64 = value.Ticks });
 
     public static Variant Create(DateTime value) =>
-        new Variant(OverlappedInfo.DateTime, new Overlapped { Int64 = value.Ticks });
+        new Variant(VariantInfo.DateTime, new Overlapped { Int64 = value.Ticks });
 
     public static Variant Create(TimeSpan value) => 
-        new Variant(OverlappedInfo.TimeSpan, new Overlapped { Int64 = value.Ticks });
+        new Variant(VariantInfo.TimeSpan, new Overlapped { Int64 = value.Ticks });
 
     public static Variant Create(string value) =>
         new Variant(value, new Overlapped { Int64 = 0 });
@@ -88,7 +89,7 @@ public readonly struct Variant : IEquatable<Variant>, ITypeUnion<Variant>
         // if decimal fits into Decimal64 then store it as such
         if (Decimal64.TryConvert(value, out var dec64))
         {
-            return new Variant(OverlappedInfo.Decimal128, new Overlapped { Int64 = dec64.GetBits() });
+            return new Variant(VariantInfo.Decimal128, new Overlapped { Int64 = dec64.GetBits() });
         }
         else
         {
@@ -177,7 +178,7 @@ public readonly struct Variant : IEquatable<Variant>, ITypeUnion<Variant>
                         return Create(tsVal);
                     break;
                 case VariantKind.Enum:
-                    var info = GetEnumInfo<T>();
+                    var info = VariantInfo.GetEnumInfo<T>();
                     var val = ConvertEnumToLong(value);
                     return new Variant(info, new Overlapped { Int64 = val });
             }
@@ -205,335 +206,598 @@ public readonly struct Variant : IEquatable<Variant>, ITypeUnion<Variant>
         return true;
     }
 
-    private readonly VariantKind Kind
-    {
-        get
-        {
-            if (_refValue is OverlappedInfo info)
-                return info.Kind;
-            else if (_refValue is string)
-                return VariantKind.String;
-            else if (_refValue == null)
-                return VariantKind.Null;
-            else
-                return VariantKind.Object;
-        }
-    }
+    public bool IsNull => 
+        _refValue == null;
 
-    public readonly bool IsNull => Kind == VariantKind.Null;
-
-    public readonly Type? Type =>
-        _refValue is OverlappedInfo info
+    public Type? Type =>
+        _refValue is VariantInfo info
             ? info.Type
             : _refValue?.GetType();
 
-    private bool BoolValue => Kind == VariantKind.Bool ? _structValue.Bool : false;
-    private sbyte Int8Value => Kind == VariantKind.Int8 ? _structValue.Int8 : (sbyte)0;
-    private short Int16Value => Kind == VariantKind.Int16 ? _structValue.Int16 : (short)0;
-    private int Int32Value => Kind == VariantKind.Int32 ? _structValue.Int32 : 0;
-    private long Int64Value => Kind == VariantKind.Int64 ? _structValue.Int64 : 0L;
-    private byte UInt8Value => Kind == VariantKind.UInt8 ? _structValue.UInt8 : (byte)0;
-    private ushort UInt16Value => Kind == VariantKind.UInt16 ? _structValue.UInt16 : (ushort)0;
-    private uint UInt32Value => Kind == VariantKind.UInt32 ? _structValue.UInt32 : 0;
-    private ulong UInt64Value => Kind == VariantKind.UInt64 ? _structValue.UInt64 : 0UL;
-    private float Float32Value => Kind == VariantKind.Float32 ? _structValue.Float32 : 0.0f;
-    private double Float64Value => Kind == VariantKind.Float64 ? _structValue.Float64 : 0.0;
-    private char Char16Value => Kind == VariantKind.Char16 ? _structValue.Char16 : '\0';
-    private Rune Char32Value => Kind == VariantKind.Char32 ? new Rune(_structValue.Int32) : default;
-    private String? StringValue => Kind == VariantKind.String ? _refValue as string : null;
-    private Decimal64 Decimal64Value => Kind == VariantKind.Decimal64 ? Decimal64.FromBits(_structValue.Int64) : Decimal64.Zero;
-    private decimal Decimal128Value => 
-        Kind == VariantKind.Decimal128 ? Decimal64.FromBits(_structValue.Int64).ToDecimal()
-        : Kind == VariantKind.Object && _refValue is decimal decimalValue ? decimalValue
-        : 0m;
-    private DateOnly DateOnlyValue => Kind == VariantKind.DateOnly ? DateOnly.FromDayNumber(_structValue.Int32) : default;
-    private TimeOnly TimeOnlyValue => Kind == VariantKind.TimeOnly ? new TimeOnly(_structValue.Int64) : default;
-    private DateTime DateTimeValue => Kind == VariantKind.DateTime ? new DateTime(_structValue.Int64) : default;
-    private TimeSpan TimeSpanValue => Kind == VariantKind.TimeSpan ? new TimeSpan(_structValue.Int64) : default;
-    private long EnumLongValue => Kind == VariantKind.Enum ? _structValue.Int64 : default;
-    private object? ObjectValue => Kind == VariantKind.Object ? _refValue : null;
-          
-    public readonly bool IsType<T>()
-    {
-        if (_refValue is EnumInfo einfo)
-            return einfo.IsType<T>(EnumLongValue);
-        else if (_refValue is OverlappedInfo info)
-            return info.Kind == GetKind(typeof(T));
-        else
-            return _refValue is T;
-    }
+    public bool IsType<T>() =>
+        _refValue is VariantInfo info
+            ? info.IsType<T>(in this)
+            : _refValue is T;
 
-    public readonly bool TryGet<T>([NotNullWhen(true)] out T value)
+    public bool TryGet<T>([NotNullWhen(true)] out T value)
     {
-        if (typeof(T) == typeof(object)
-            && ToObject() is T objVal)
+        if (_refValue is VariantInfo info)
         {
-            value = objVal;
+            return info.TryGet<T>(in this, out value);
+        }
+        else if (_refValue is T tval)
+        {
+            value = tval;
             return true;
         }
-        else if (typeof(T) == typeof(Variant)
-            && this is T varVal)
-        {
-            value = varVal;
-            return true;
-        }
-
-        switch (Kind)
-        {
-            case VariantKind.Bool: 
-                if (BoolValue is T boolValue)
-                {
-                    value = boolValue;
-                    return true;
-                }
-                break;
-            case VariantKind.Int8:
-                if (Int8Value is T sbyteValue)
-                {
-                    value = sbyteValue;
-                    return true;
-                }
-                break;
-            case VariantKind.Int16:
-                if (Int16Value is T shortValue)
-                {
-                    value = shortValue;
-                    return true;
-                }
-                break;
-            case VariantKind.Int32:
-                if (Int32Value is T intValue)
-                {
-                    value = intValue;
-                    return true;
-                }
-                break;
-            case VariantKind.Int64:
-                if (Int64Value is T longValue)
-                {
-                    value = longValue;
-                    return true;
-                }
-                break;
-            case VariantKind.UInt8:
-                if (UInt8Value is T byteValue)
-                {
-                    value = byteValue;
-                    return true;
-                }
-                break;
-            case VariantKind.UInt16:
-                if (UInt16Value is T ushortValue)
-                {
-                    value = ushortValue;
-                    return true;
-                }
-                break;
-            case VariantKind.UInt32:
-                if (UInt32Value is T uintValue)
-                {
-                    value = uintValue;
-                    return true;
-                }
-                break;
-            case VariantKind.UInt64:
-                if (UInt64Value is T ulongValue)
-                {
-                    value = ulongValue;
-                    return true;
-                }
-                break;
-            case VariantKind.Float32:
-                if (Float32Value is T floatValue)
-                {
-                    value = floatValue;
-                    return true;
-                }
-                break;
-            case VariantKind.Float64:
-                if (Float64Value is T doubleValue)
-                {
-                    value = doubleValue;
-                    return true;
-                }
-                break;
-            case VariantKind.Char16:
-                if (Char16Value is T charValue)
-                {
-                    value = charValue;
-                    return true;
-                }
-                break;
-            case VariantKind.Char32:
-                if (Char32Value is T runeValue)
-                {
-                    value = runeValue;
-                    return true;
-                }
-                break;
-            case VariantKind.Decimal64:
-                if (Decimal64Value is T dec64Value)
-                {
-                    value = dec64Value;
-                    return true;
-                }
-                break;
-            case VariantKind.Decimal128:
-                if (Decimal128Value is T decimalValue)
-                {
-                    value = decimalValue;
-                    return true;
-                }
-                break;
-            case VariantKind.DateOnly:
-                if (DateOnlyValue is T dateValue)
-                {
-                    value = dateValue;
-                    return true;
-                }
-                break;
-            case VariantKind.TimeOnly:
-                if (TimeOnlyValue is T timeValue)
-                {
-                    value = timeValue;
-                    return true;
-                }
-                break;
-            case VariantKind.DateTime:
-                if (DateTimeValue is T dateTimeValue)
-                {
-                    value = dateTimeValue;
-                    return true;
-                }
-                break;
-            case VariantKind.TimeSpan:
-                if (TimeSpanValue is T timeSpanValue)
-                {
-                    value = timeSpanValue;
-                    return true;
-                }
-                break;
-            case VariantKind.Enum:
-                var info = (EnumInfo)_refValue!;
-                if (info.IsType<T>(EnumLongValue))
-                {
-                    return TryConvertLongToEnum(_structValue.Int64, out value);
-                }
-                break;
-            case VariantKind.String:
-                if (StringValue is T stringValue)
-                {
-                    value = stringValue;
-                    return true;
-                }
-                break;
-            case VariantKind.Object:
-                if (ObjectValue is T objectValue)
-                {
-                    value = objectValue;
-                    return true;
-                }
-                break;
-            case VariantKind.Null:
-                value = default!;
-                return false;
-            default:
-                throw new InvalidOperationException("Unhandled VariantKind");
-        };
-
         value = default!;
         return false;
     }
 
-    public readonly T AsType<T>() => 
+    public T AsType<T>() => 
         TryGet<T>(out var value) ? value : default!;
 
-    public readonly T Get<T>() =>
+    public T Get<T>() =>
         TryGet<T>(out var value) ? value : throw new InvalidCastException($"Cannot cast to type: {typeof(T).Name}");
 
     public object? ToObject() =>
-        Kind switch
+        _refValue is VariantInfo info
+            ? info.ToObject(in this)
+            : _refValue;
+
+    public override string ToString() =>
+        _refValue is VariantInfo info
+            ? info.ToString(in this)
+            : _refValue?.ToString() ?? "";
+
+    public bool TryConvertToBool(out bool value)
+    {
+        if (_refValue is VariantInfo info
+            && info.TryConvertToBool(in this, out value))
         {
-            VariantKind.Bool => BoolValue,
-            VariantKind.Int8 => Int8Value,
-            VariantKind.Int16 => Int16Value,
-            VariantKind.Int32 => Int32Value,
-            VariantKind.Int64 => Int64Value,
-            VariantKind.UInt8 => UInt8Value,
-            VariantKind.UInt16 => UInt16Value,
-            VariantKind.UInt32 => UInt32Value,
-            VariantKind.UInt64 => UInt64Value,
-            VariantKind.Float32 => Float32Value,
-            VariantKind.Float64 => Float64Value,
-            VariantKind.Char16 => Char16Value,
-            VariantKind.Char32 => Char32Value,
-            VariantKind.Decimal64 => Decimal64Value,
-            VariantKind.Decimal128 => Decimal128Value,
-            VariantKind.DateOnly => DateOnlyValue,
-            VariantKind.DateTime => DateTimeValue,
-            VariantKind.TimeSpan => DateTimeValue,
-            VariantKind.Enum => _refValue is EnumInfo info ? info.ConvertToObject(EnumLongValue) : null,
-            VariantKind.String => StringValue,
-            VariantKind.Object => ObjectValue,
-            _ => null
+            return true;
+        }
+        else if (_refValue is string str)
+        {
+            return bool.TryParse(str, out value);
+        }
+
+        value = default;
+        return false;
+    }
+
+    public bool ToBool() =>
+        TryConvertToBool(out var value)
+            ? value
+            : throw new InvalidCastException();
+
+    public bool TryConvertToInt8(out sbyte value)
+    {
+        if (_refValue is VariantInfo info
+            && info.TryConvertToInt8(in this, out value))
+        {
+            return true;
+        }
+        else if (_refValue is string str)
+        {
+            return sbyte.TryParse(str, out value);
+        }
+
+        value = default;
+        return false;
+    }
+
+    public sbyte ToInt8() =>
+        TryConvertToInt8(out var value)
+            ? value
+            : throw new InvalidCastException();
+
+    public bool TryConvertToInt16(out short value)
+    {
+        if (_refValue is VariantInfo info
+            && info.TryConvertToInt16(in this, out value))
+        {
+            return true;
+        }
+        else if (_refValue is string str)
+        {
+            return short.TryParse(str, out value);
+        }
+
+        value = default;
+        return false;
+    }
+
+    public short ToInt16() =>
+        TryConvertToInt16(out var value)
+            ? value
+            : throw new InvalidCastException();
+
+    public bool TryConvertToInt32(out int value)
+    {
+        if (_refValue is VariantInfo info
+            && info.TryConvertToInt32(in this, out value))
+        {
+            return true;
+        }
+        else if (_refValue is string str)
+        {
+            return int.TryParse(str, out value);
+        }
+
+        value = default;
+        return false;
+    }
+
+    public int ToInt32() =>
+        TryConvertToInt32(out var value)
+            ? value
+            : throw new InvalidCastException();
+
+    public bool TryConvertToInt64(out long value)
+    {
+        if (_refValue is VariantInfo info
+            && info.TryConvertToInt64(in this, out value))
+        {
+            return true;
+        }
+        else if (_refValue is string str)
+        {
+            return long.TryParse(str, out value);
+        }
+
+        value = default;
+        return false;
+    }
+
+    public long ToInt64() =>
+        TryConvertToInt64(out var value)
+            ? value
+            : throw new InvalidCastException();
+
+    public bool TryConvertToByte(out byte value)
+    {
+        if (_refValue is VariantInfo info
+            && info.TryConvertToUInt8(in this, out value))
+        {
+            return true;
+        }
+        else if (_refValue is string str)
+        {
+            return byte.TryParse(str, out value);
+        }
+
+        value = default;
+        return false;
+    }
+
+    public byte ToByte() =>
+        TryConvertToByte(out var value)
+            ? value
+            : throw new InvalidCastException();
+
+    public bool TryConvertToUInt16(out ushort value)
+    {
+        if (_refValue is VariantInfo info
+            && info.TryConvertToUInt16(in this, out value))
+        {
+            return true;
+        }
+        else if (_refValue is string str)
+        {
+            return ushort.TryParse(str, out value);
+        }
+
+        value = default;
+        return false;
+    }
+
+    public ushort ToUInt16() =>
+        TryConvertToUInt16(out var value)
+            ? value
+            : throw new InvalidCastException();
+
+    public bool TryConvertToUInt32(out uint value)
+    {
+        if (_refValue is VariantInfo info
+            && info.TryConvertToUInt32(in this, out value))
+        {
+            return true;
+        }
+        else if (_refValue is string str)
+        {
+            return uint.TryParse(str, out value);
+        }
+
+        value = default;
+        return false;
+    }
+
+    public uint ToUInt32() =>
+        TryConvertToUInt32(out var value)
+            ? value
+            : throw new InvalidCastException();
+
+    public bool TryConvertToUInt64(out ulong value)
+    {
+        if (_refValue is VariantInfo info
+            && info.TryConvertToUInt64(in this, out value))
+        {
+            return true;
+        }
+        else if (_refValue is string str)
+        {
+            return ulong.TryParse(str, out value);
+        }
+
+        value = default;
+        return false;
+    }
+
+    public ulong ToUInt64() =>
+        TryConvertToUInt64(out var value)
+            ? value
+            : throw new InvalidCastException();
+
+    public bool TryConvertToDecimal64(out Decimal64 value)
+    {
+        if (_refValue is VariantInfo info
+            && info.TryConvertToDecimal64(in this, out value))
+        {
+            return true;
+        }
+        else if (_refValue is string str)
+        {
+            return Decimal64.TryParse(str, out value);
+        }
+
+        value = default;
+        return false;
+    }
+
+    public Decimal64 ToDecimal64() =>
+        TryConvertToDecimal64(out var value)
+            ? value
+            : throw new InvalidCastException();
+
+    public bool TryConvertToDecimal(out decimal value)
+    {
+        if (_refValue is VariantInfo info
+            && info.TryConvertToDecimal(in this, out value))
+        {
+            return true;
+        }
+        else if (_refValue is decimal dval)
+        {
+            value = dval;
+            return true;
+        }
+        else if (_refValue is string str)
+        {
+            return decimal.TryParse(str, out value);
+        }
+
+        value = default;
+        return false;
+    }
+
+    public decimal ToDecimal() =>
+        TryConvertToDecimal(out var value)
+            ? value
+            : throw new InvalidCastException();
+
+    public bool TryConvertToSingle(out float value)
+    {
+        if (_refValue is VariantInfo info
+            && info.TryConvertToFloat32(in this, out value))
+        {
+            return true;
+        }
+        else if (_refValue is string str)
+        {
+            return float.TryParse(str, out value);
+        }
+
+        value = default;
+        return false;
+    }
+
+    public float ToSingle() =>
+        TryConvertToSingle(out var value)
+            ? value
+            : throw new InvalidCastException();
+
+
+    public bool TryConvertToDouble(out double value)
+    {
+        if (_refValue is VariantInfo info
+            && info.TryConvertToFloat64(in this, out value))
+        {
+            return true;
+        }
+        else if (_refValue is string str)
+        {
+            return double.TryParse(str, out value);
+        }
+
+        value = default;
+        return false;
+    }
+
+    public double ToDouble() =>
+        TryConvertToDouble(out var value)
+            ? value
+            : throw new InvalidCastException();
+
+    public bool TryConvertToChar(out char value)
+    {
+        if (_refValue is VariantInfo info
+            && info.TryConvertToChar16(in this, out value))
+        {
+            return true;
+        }
+        else if (_refValue is string str)
+        {
+            return char.TryParse(str, out value);
+        }
+
+        value = default;
+        return false;
+    }
+
+    public char ToChar() =>
+        TryConvertToChar(out var value)
+            ? value
+            : throw new InvalidCastException();
+
+    public bool TryConvertToRune(out Rune value)
+    {
+        if (_refValue is VariantInfo info
+            && info.TryConvertToChar32(in this, out value))
+        {
+            return true;
+        }
+
+        value = default;
+        return false;
+    }
+
+    public Rune ToRune() =>
+        TryConvertToRune(out var value)
+            ? value
+            : throw new InvalidCastException();
+
+    public bool TryConvertToDateOnly(out DateOnly value)
+    {
+        if (_refValue is VariantInfo info
+            && info.TryConvertToDateOnly(in this, out value))
+        {
+            return true;
+        }
+        else if (_refValue is string str)
+        {
+            return DateOnly.TryParse(str, out value);
+        }    
+
+        value = default;
+        return false;
+    }
+
+    public DateOnly ToDateOnly() =>
+        TryConvertToDateOnly(out var value)
+            ? value
+            : throw new InvalidCastException();
+
+    public bool TryConvertToTimeOnly(out TimeOnly value)
+    {
+        if (_refValue is VariantInfo info
+            && info.TryConvertToTimeOnly(in this, out value))
+        {
+            return true;
+        }
+        else if (_refValue is string str)
+        {
+            return TimeOnly.TryParse(str, out value);
+        }
+
+        value = default;
+        return false;
+    }
+
+    public TimeOnly ToTimeOnly() =>
+        TryConvertToTimeOnly(out var value)
+            ? value
+            : throw new InvalidCastException();
+
+    public bool TryConvertToDateTime(out DateTime value)
+    {
+        if (_refValue is VariantInfo info
+            && info.TryConvertToDateTime(in this, out value))
+        {
+            return true;
+        }
+        else if (_refValue is string str)
+        {
+            return DateTime.TryParse(str, out value);
+        }
+
+        value = default;
+        return false;
+    }
+
+    public DateTime ToDateTime() =>
+        TryConvertToDateTime(out var value)
+            ? value
+            : throw new InvalidCastException();
+
+    public bool TryConvertToTimeSpan(out TimeSpan value)
+    {
+        if (_refValue is VariantInfo info
+            && info.TryConvertToTimeSpan(in this, out value))
+        {
+            return true;
+        }
+        else if (_refValue is string str)
+        {
+            return TimeSpan.TryParse(str, out value);
+        }
+
+        value = default;
+        return false;
+    }
+
+    public TimeSpan ToTimeSpan() =>
+        TryConvertToTimeSpan(out var value)
+            ? value
+            : throw new InvalidCastException();
+
+    public bool TryConvertToGuid(out Guid value)
+    {
+        if (_refValue is Guid guid)
+        {
+            value = guid;
+            return true;
+        }
+        else if (_refValue is string str)
+        {
+            return Guid.TryParse(str, out value);
+        }
+
+        value = default;
+        return false;       
+    }
+
+    public Guid ToGuid() =>
+        TryConvertToGuid(out var value)
+            ? value
+            : throw new InvalidCastException();
+
+    /// <summary>
+    /// Attempts to convert the value into the specified type.
+    /// Returns true if the value is successfully converted.
+    /// </summary>
+    public bool TryConvertTo<T>([NotNullWhen(true)] out T converted)
+    {
+        var kind = GetKind(typeof(T));
+
+        switch (kind)
+        {
+            case VariantKind.Bool when TryConvertToBool(out var bval) && bval is T tval:
+                converted = tval;
+                return true;
+            case VariantKind.Int8 when TryConvertToInt8(out var i8val) && i8val is T tval:
+                converted = tval;
+                return true;
+            case VariantKind.Int16 when TryConvertToInt16(out var i16val) && i16val is T tval:
+                converted = tval;
+                return true;
+            case VariantKind.Int32 when TryConvertToInt32(out var i32val) && i32val is T tval:
+                converted = tval;
+                return true;
+            case VariantKind.Int64 when TryConvertToInt64(out var i64val) && i64val is T tval:
+                converted = tval;
+                return true;
+            case VariantKind.UInt8 when TryConvertToByte(out var u8val) && u8val is T tval:
+                converted = tval;
+                return true;
+            case VariantKind.UInt16 when TryConvertToUInt16(out var u16val) && u16val is T tval:
+                converted = tval;
+                return true;
+            case VariantKind.UInt32 when TryConvertToUInt32(out var u32val) && u32val is T tval:
+                converted = tval;
+                return true;
+            case VariantKind.UInt64 when TryConvertToUInt64(out var u64val) && u64val is T tval:
+                converted = tval;
+                return true;
+            case VariantKind.Float32 when TryConvertToSingle(out var f32val) && f32val is T tval:
+                converted = tval;
+                return true;
+            case VariantKind.Float64 when TryConvertToDouble(out var f64val) && f64val is T tval:
+                converted = tval;
+                return true;
+            case VariantKind.Decimal64 when TryConvertToDecimal64(out var d64val) && d64val is T tval:
+                converted = tval;
+                return true;
+            case VariantKind.Decimal128 when TryConvertToDecimal(out var dval) && dval is T tval:
+                converted = tval;
+                return true;
+            case VariantKind.DateOnly when TryConvertToDateOnly(out var doval) && doval is T tval:
+                converted = tval;
+                return true;
+            case VariantKind.TimeOnly when TryConvertToTimeOnly(out var toval) && toval is T tval:
+                converted = tval;
+                return true;
+            case VariantKind.DateTime when TryConvertToDateTime(out var dtval) && dtval is T tval:
+                converted = tval;
+                return true;
+            case VariantKind.TimeSpan when TryConvertToTimeSpan(out var tsval) && tsval is T tval:
+                converted = tval;
+                return true;
+            case VariantKind.Enum when TryConvertToInt64(out var eval) && TryConvertLongToEnum(eval, out T tval):
+                converted = tval;
+                return true;
+            case VariantKind.String when ToString() is T tval:
+                converted = tval;
+                return true;
+            case VariantKind.Object when _refValue is T tval:
+                converted = tval;
+                return true;                
+            default:
+                if (typeof(T) == typeof(object)
+                    && ToObject() is T oval)
+                {
+                    converted = oval;
+                    return true;
+                }
+                else if (typeof(T) == typeof(Guid)
+                    && ToGuid() is T guid)
+                {
+                    converted = guid;
+                    return true;
+                }
+                break;
         };
 
-    public readonly override string ToString() =>
-        Kind switch
-        {
-            VariantKind.Bool => BoolValue.ToString(),
-            VariantKind.Int8 => Int8Value.ToString(),
-            VariantKind.Int16 => Int16Value.ToString(),
-            VariantKind.Int32 => Int32Value.ToString(),
-            VariantKind.Int64 => Int64Value.ToString(),
-            VariantKind.UInt8 => UInt8Value.ToString(),
-            VariantKind.UInt16 => UInt16Value.ToString(),
-            VariantKind.UInt32 => UInt32Value.ToString(),
-            VariantKind.UInt64 => UInt64Value.ToString(),
-            VariantKind.Float32 => Float32Value.ToString(),
-            VariantKind.Float64 => Float64Value.ToString(),
-            VariantKind.Char16 => Char16Value.ToString(),
-            VariantKind.Char32 => Char32Value.ToString(),
-            VariantKind.Decimal64 => Decimal64Value.ToString(),
-            VariantKind.Decimal128 => Decimal128Value.ToString(),
-            VariantKind.DateOnly => DateOnlyValue.ToString(),
-            VariantKind.DateTime => DateTimeValue.ToString(),
-            VariantKind.TimeSpan => DateTimeValue.ToString(),
-            VariantKind.Enum => _refValue is EnumInfo info ? info.ConvertToEnumString(EnumLongValue) : "",
-            VariantKind.String => StringValue ?? "",
-            VariantKind.Object => ObjectValue?.ToString() ?? "",
-            _ => ""
-        };
+        converted = default!;
+        return false;
+    }
 
-    public readonly bool Equals(Variant other) =>
-        Kind == other.Kind &&
-        Kind switch
-        {
-            VariantKind.Bool => BoolValue == other.BoolValue,
-            VariantKind.Int8 => Int8Value == other.Int8Value,
-            VariantKind.Int16 => Int16Value == other.Int16Value,
-            VariantKind.Int32 => Int32Value == other.Int32Value,
-            VariantKind.Int64 => Int64Value == other.Int64Value,
-            VariantKind.UInt8 => UInt8Value == other.UInt8Value,
-            VariantKind.UInt16 => UInt16Value == other.UInt16Value,
-            VariantKind.UInt32 => UInt32Value == other.UInt32Value,
-            VariantKind.UInt64 => UInt64Value == other.UInt64Value,
-            VariantKind.Float32 => Float32Value == other.Float32Value,
-            VariantKind.Float64 => Float64Value == other.Float64Value,
-            VariantKind.Char16 => Char16Value == other.Char16Value,
-            VariantKind.Char32 => Char32Value == other.Char32Value,
-            VariantKind.Decimal64 => Decimal64Value == other.Decimal64Value,
-            VariantKind.Decimal128 => Decimal128Value == other.Decimal128Value,
-            VariantKind.DateOnly => DateOnlyValue == other.DateOnlyValue,
-            VariantKind.TimeOnly => TimeOnlyValue == other.TimeOnlyValue,
-            VariantKind.DateTime => DateTimeValue == other.DateTimeValue,
-            VariantKind.TimeSpan => TimeSpanValue == other.TimeSpanValue,
-            VariantKind.Enum => EnumLongValue == other.EnumLongValue,
-            VariantKind.Object => (ObjectValue == other.ObjectValue) || (ObjectValue?.Equals(other) ?? false),
-            _ => false
-        };
+    public T ConvertTo<T>() =>
+        TryConvertTo<T>(out var value) 
+            ? value 
+            : throw new InvalidCastException();
 
-    public readonly bool Equals<T>(T? other)
+    /// <summary>
+    /// Attempts to convert the value into the specified parsable type.
+    /// Returns true if the value is successfully converted.
+    /// </summary>
+    public bool TryConvertToParsable<T>([NotNullWhen(true)] out T converted)
+        where T : IParsable<T>
+    {
+        if (TryConvertTo(out converted))
+        {
+            return true;
+        }
+        else if (_refValue is string str)
+        {
+            return T.TryParse(str, null, out converted!);
+        }
+
+        converted = default!;
+        return false;
+    }
+
+    public T ConvertToParsable<T>() where T : IParsable<T> =>
+        TryConvertToParsable<T>(out var value) 
+            ? value 
+            : throw new InvalidCastException();
+
+    public bool Equals(Variant other) =>
+        _refValue is VariantInfo info
+            ? info.Equals(in this, in other)
+            : object.Equals(_refValue, other._refValue);
+
+    public bool Equals<T>(T? other)
     {
         if (other is Variant vother)
         {
@@ -551,36 +815,15 @@ public readonly struct Variant : IEquatable<Variant>, ITypeUnion<Variant>
         return false;
     }
 
-    public readonly override bool Equals([NotNullWhen(true)] object? other) =>
+    public override bool Equals([NotNullWhen(true)] object? other) =>
         Equals<object?>(other);
 
-    public readonly override int GetHashCode() =>
-        Kind switch
-        {
-            VariantKind.Bool => BoolValue ? 1 : 0,
-            VariantKind.Int8 => Int8Value.GetHashCode(),
-            VariantKind.Int16 => Int16Value.GetHashCode(),
-            VariantKind.Int32 => Int32Value.GetHashCode(),
-            VariantKind.Int64 => Int64Value.GetHashCode(),
-            VariantKind.UInt8 => UInt8Value.GetHashCode(),
-            VariantKind.UInt16 => UInt16Value.GetHashCode(),
-            VariantKind.UInt32 => UInt32Value.GetHashCode(),
-            VariantKind.UInt64 => UInt64Value.GetHashCode(),
-            VariantKind.Float32 => Float32Value.GetHashCode(),
-            VariantKind.Float64 => Float64Value.GetHashCode(),
-            VariantKind.Char16 => Char16Value.GetHashCode(),
-            VariantKind.Char32 => Char32Value.GetHashCode(),
-            VariantKind.Decimal64 => Decimal64Value.GetHashCode(),
-            VariantKind.Decimal128 => Decimal128Value.GetHashCode(),
-            VariantKind.DateOnly => DateOnlyValue.GetHashCode(),
-            VariantKind.TimeOnly => TimeOnlyValue.GetHashCode(),
-            VariantKind.DateTime => DateTimeValue.GetHashCode(),
-            VariantKind.TimeSpan => TimeSpanValue.GetHashCode(),
-            VariantKind.Enum => EnumLongValue.GetHashCode(),
-            VariantKind.Object => ObjectValue?.GetHashCode() ?? 0,
-            _ => 0
-        };
+    public override int GetHashCode() =>
+        _refValue is VariantInfo info
+            ? info.GetHashCode(in this)
+            : _refValue?.GetHashCode() ?? 0;
 
+    // operators
     public static bool operator ==(Variant a, Variant b) => a.Equals(b);
     public static bool operator !=(Variant a, Variant b) => !a.Equals(b);
 
@@ -629,601 +872,48 @@ public readonly struct Variant : IEquatable<Variant>, ITypeUnion<Variant>
     public static implicit operator Variant(TimeSpan? value) => Create(value);
     public static implicit operator Variant(Guid? value) => Create(value);
 
-    public static explicit operator bool(Variant value) => value.ConvertTo<bool>();
-    public static implicit operator sbyte(Variant value) => value.ConvertTo<sbyte>();
-    public static implicit operator short(Variant value) => value.ConvertTo<short>();
-    public static implicit operator int(Variant value) => value.ConvertTo<int>();
-    public static implicit operator long(Variant value) => value.ConvertTo<long>();
-    public static implicit operator byte(Variant value) => value.ConvertTo<byte>();
-    public static implicit operator ushort(Variant value) => value.ConvertTo<ushort>();
-    public static implicit operator uint(Variant value) => value.ConvertTo<uint>();
-    public static implicit operator ulong(Variant value) => value.ConvertTo<ulong>();
-    public static implicit operator float(Variant value) => value.ConvertTo<float>();
-    public static implicit operator double(Variant value) => value.ConvertTo<double>();
-    public static implicit operator Decimal64(Variant value) => value.ConvertTo<Decimal64>();
-    public static implicit operator decimal(Variant value) => value.ConvertTo<decimal>();
-    public static implicit operator char(Variant value) => value.ConvertTo<char>();
-    public static implicit operator Rune(Variant value) => value.ConvertTo<Rune>();
-    public static implicit operator String(Variant value) => value.ConvertTo<string>();
-    public static implicit operator DateOnly(Variant value) => value.ConvertTo<DateOnly>();
-    public static implicit operator TimeOnly(Variant value) => value.ConvertTo<TimeOnly>();
-    public static implicit operator DateTime(Variant value) => value.ConvertTo<DateTime>();
-    public static implicit operator TimeSpan(Variant value) => value.ConvertTo<TimeSpan>();
-    public static implicit operator Guid(Variant value) => value.ConvertTo<Guid>();
+    public static explicit operator bool(Variant value) => value.ToBool();
+    public static implicit operator sbyte(Variant value) => value.ToInt8();
+    public static implicit operator short(Variant value) => value.ToInt16();
+    public static implicit operator int(Variant value) => value.ToInt32();
+    public static implicit operator long(Variant value) => value.ToInt64();
+    public static implicit operator byte(Variant value) => value.ToByte();
+    public static implicit operator ushort(Variant value) => value.ToUInt16();
+    public static implicit operator uint(Variant value) => value.ToUInt32();
+    public static implicit operator ulong(Variant value) => value.ToUInt64();
+    public static implicit operator float(Variant value) => value.ToSingle();
+    public static implicit operator double(Variant value) => value.ToDouble();
+    public static implicit operator Decimal64(Variant value) => value.ToDecimal64();
+    public static implicit operator decimal(Variant value) => value.ToDecimal();
+    public static implicit operator char(Variant value) => value.ToChar();
+    public static implicit operator Rune(Variant value) => value.ToRune();
+    public static implicit operator String(Variant value) => value.ToString();
+    public static implicit operator DateOnly(Variant value) => value.ToDateOnly();
+    public static implicit operator TimeOnly(Variant value) => value.ToTimeOnly();
+    public static implicit operator DateTime(Variant value) => value.ToDateTime();
+    public static implicit operator TimeSpan(Variant value) => value.ToTimeSpan();
+    public static implicit operator Guid(Variant value) => value.ToGuid();
 
-    public static explicit operator bool?(Variant value) => value.ConvertToOrDefault<bool?>();
-    public static implicit operator sbyte?(Variant value) => value.ConvertToOrDefault<sbyte?>();
-    public static implicit operator short?(Variant value) => value.ConvertToOrDefault<short?>();
-    public static implicit operator int?(Variant value) => value.ConvertToOrDefault<int?>();
-    public static implicit operator long?(Variant value) => value.ConvertToOrDefault<long?>();
-    public static implicit operator byte?(Variant value) => value.ConvertToOrDefault<byte?>();
-    public static implicit operator ushort?(Variant value) => value.ConvertToOrDefault<ushort?>();
-    public static implicit operator uint?(Variant value) => value.ConvertToOrDefault<uint?>();
-    public static implicit operator ulong?(Variant value) => value.ConvertToOrDefault<ulong?>();
-    public static implicit operator float?(Variant value) => value.ConvertToOrDefault<float?>();
-    public static implicit operator double?(Variant value) => value.ConvertToOrDefault<double?>();
-    public static implicit operator Decimal64?(Variant value) => value.ConvertToOrDefault<Decimal64?>();
-    public static implicit operator decimal?(Variant value) => value.ConvertToOrDefault<decimal?>();
-    public static implicit operator char?(Variant value) => value.ConvertToOrDefault<char?>();
-    public static implicit operator Rune?(Variant value) => value.ConvertToOrDefault<Rune?>();
-    public static implicit operator DateOnly?(Variant value) => value.ConvertToOrDefault<DateOnly?>();
-    public static implicit operator TimeOnly?(Variant value) => value.ConvertToOrDefault<TimeOnly?>();
-    public static implicit operator DateTime?(Variant value) => value.ConvertToOrDefault<DateTime?>();
-    public static implicit operator TimeSpan?(Variant value) => value.ConvertToOrDefault<TimeSpan?>();
-    public static implicit operator Guid?(Variant value) => value.ConvertToOrDefault<Guid?>();
-
-    private bool TryConvertToInt64(out long converted)
-    {
-        switch (Kind)
-        {
-            case VariantKind.Bool:
-                converted = BoolValue ? 1 : 0;
-                return true;
-            case VariantKind.Int8:
-                converted = Int8Value;
-                return true;
-            case VariantKind.Int16:
-                converted = Int16Value;
-                return true;
-            case VariantKind.Int32:
-                converted = Int32Value;
-                return true;
-            case VariantKind.Int64:
-                converted = Int64Value;
-                return true;
-            case VariantKind.UInt8:
-                converted = UInt8Value;
-                return true;
-            case VariantKind.UInt16:
-                converted = UInt16Value;
-                return true;
-            case VariantKind.UInt32:
-                converted = UInt32Value;
-                return true;
-            case VariantKind.UInt64:
-                if (UInt64Value <= Int64.MaxValue)
-                {
-                    converted = (long)UInt64Value;
-                    return true;
-                }
-                break;
-            case VariantKind.Float32:
-                if (Float32Value >= Int64.MinValue && Float32Value <= Int64.MaxValue)
-                {
-                    converted = (long)Float32Value;
-                    return true;
-                }
-                break;
-            case VariantKind.Float64:
-                if (Float64Value >= Int64.MinValue && Float64Value <= Int64.MaxValue)
-                {
-                    converted = (long)Float64Value;
-                    return true;
-                }
-                break;
-            case VariantKind.Char16:
-                converted = Char16Value;
-                return true;
-            case VariantKind.Char32:
-                converted = Char32Value.Value;
-                return true;
-            case VariantKind.Decimal64:
-                converted = (long)Decimal64Value;
-                return true;
-            case VariantKind.Decimal128:
-                var dec128 = Decimal128Value;
-                if (dec128 >= Int64.MinValue && dec128 <= Int64.MaxValue)
-                {
-                    converted = (long)dec128;
-                    return true;
-                }
-                break;
-            case VariantKind.Enum:
-                converted = EnumLongValue;
-                return true;
-            case VariantKind.String:
-                return Int64.TryParse(StringValue, out converted);
-        };
-
-        converted = default!;
-        return false;
-    }
-
-    private bool TryConvertToDecimal(out decimal converted)
-    {
-        switch (Kind)
-        {
-            case VariantKind.Bool:
-                converted = BoolValue ? 1 : 0;
-                return true;
-            case VariantKind.Int8:
-                converted = Int8Value;
-                return true;
-            case VariantKind.Int16:
-                converted = Int16Value;
-                return true;
-            case VariantKind.Int32:
-                converted = Int32Value;
-                return true;
-            case VariantKind.Int64:
-                converted = Int64Value;
-                return true;
-            case VariantKind.UInt8:
-                converted = UInt8Value;
-                return true;
-            case VariantKind.UInt16:
-                converted = UInt16Value;
-                return true;
-            case VariantKind.UInt32:
-                converted = UInt32Value;
-                return true;
-            case VariantKind.UInt64:
-                converted = UInt64Value;
-                return true;
-            case VariantKind.Float32:
-                if (Float32Value >= (double)decimal.MinValue && Float32Value <= (double)decimal.MaxValue)
-                {
-                    converted = (decimal)Float32Value;
-                    return true;
-                }
-                break;
-            case VariantKind.Float64:
-                if (Float64Value >= (double)decimal.MinValue && Float64Value <= (double)decimal.MaxValue)
-                {
-                    converted = (decimal)Float64Value;
-                    return true;
-                }
-                break;
-            case VariantKind.Char16:
-                converted = Char16Value;
-                return true;
-            case VariantKind.Char32:
-                converted = Char32Value.Value;
-                return true;
-            case VariantKind.Decimal64:
-                converted = Decimal64Value;
-                return true;
-            case VariantKind.Decimal128:
-                converted = Decimal128Value;
-                return true;
-            case VariantKind.Enum:
-                converted = EnumLongValue;
-                return true;
-            case VariantKind.String:
-                return decimal.TryParse(StringValue, out converted);
-        };
-
-        converted = default!;
-        return false;
-    }
-
-    private bool TryConvertToBool(out bool value)
-    {
-        if (Kind == VariantKind.Bool)
-        {
-            value = BoolValue;
-            return true;
-        }
-        else if (Kind == VariantKind.String && bool.TryParse(StringValue, out var bval))
-        {
-            value = bval;
-            return true;
-        }
-        else if (TryConvertToInt64(out var i64) && (i64 == 1 || i64 == 0))
-        {
-            value = i64 == 1;
-            return true;
-        }
-
-        value = default;
-        return false;
-    }
-
-    private bool TryConvertToInt8(out sbyte value)
-    {
-        if (TryConvertToInt64(out var i64) && i64 >= sbyte.MinValue && i64 <= sbyte.MaxValue)
-        {
-            value = (sbyte)i64;
-            return true;
-        }
-        value = default;
-        return false;
-    }
-
-    private bool TryConvertToInt16(out short value)
-    {
-        if (TryConvertToInt64(out var i64) && i64 >= short.MinValue && i64 <= short.MaxValue)
-        {
-            value = (short)i64;
-            return true;
-        }
-        value = default;
-        return false;
-    }
-
-    private bool TryConvertToInt32(out int value)
-    {
-        if (TryConvertToInt64(out var i64) && i64 >= int.MinValue && i64 <= int.MaxValue)
-        {
-            value = (short)i64;
-            return true;
-        }
-        value = default;
-        return false;
-    }
-
-    private bool TryConvertToUInt8(out short value)
-    {
-        if (TryConvertToInt64(out var i64) && i64 >= byte.MinValue && i64 <= byte.MaxValue)
-        {
-            value = (byte)i64;
-            return true;
-        }
-        value = default;
-        return false;
-    }
-
-    private bool TryConvertToUInt16(out ushort value)
-    {
-        if (TryConvertToInt64(out var i64) && i64 >= ushort.MinValue && i64 <= ushort.MaxValue)
-        {
-            value = (ushort)i64;
-            return true;
-        }
-        value = default;
-        return false;
-    }
-
-    private bool TryConvertToUInt32(out uint value)
-    {
-        if (TryConvertToInt64(out var i64) && i64 >= uint.MinValue && i64 <= uint.MaxValue)
-        {
-            value = (uint)i64;
-            return true;
-        }
-        value = default;
-        return false;
-    }
-
-    private bool TryConvertToUInt64(out ulong value)
-    {
-        if (TryConvertToDecimal(out var dec) && dec >= ulong.MinValue && dec <= ulong.MaxValue)
-        {
-            value = (ulong)dec;
-            return true;
-        }
-        value = default;
-        return false;
-    }
-
-    private bool TryConvertToFloat32(out float value)
-    {
-        if (Kind == VariantKind.Float32)
-        {
-            value = Float32Value;
-            return true;
-        }
-        else if (Kind == VariantKind.Float64 && Float64Value >= float.MinValue && Float64Value <= float.MaxValue)
-        {
-            value = (float)Float64Value;
-            return true;
-        }
-        else if (TryConvertToDecimal(out var dec))
-        {
-            value = (float)dec;
-            return true;
-        }
-        value = default;
-        return false;
-    }
-
-    private bool TryConvertToFloat64(out double value)
-    {
-        if (Kind == VariantKind.Float32)
-        {
-            value = Float32Value;
-            return true;
-        }
-        else if (Kind == VariantKind.Float64)
-        {
-            value = Float64Value;
-            return true;
-        }
-        else if (TryConvertToDecimal(out var dec))
-        {
-            value = (float)dec;
-            return true;
-        }
-        value = default;
-        return false;
-    }
-
-    private bool TryConvertToEnum<TEnum>([NotNullWhen(true)] out TEnum value)
-    {
-        if (TryConvertToInt64(out var i64val)
-            && TryConvertLongToEnum(i64val, out value))
-        {
-            return true;
-        }
-
-        value = default!;
-        return false;
-    }
-
-    private bool TryConvertToDecimal64(out Decimal64 value)
-    {
-        if (Kind == VariantKind.Decimal64)
-        {
-            value = Decimal64Value;
-            return true;
-        }
-        else if (TryConvertToDecimal(out var dec))
-        {
-            return Decimal64.TryConvert(dec, out value);
-        }
-        value = default;
-        return false;
-    }
-
-    private bool TryConvertToDateOnly(out DateOnly value)
-    {
-        if (Kind == VariantKind.DateOnly)
-        {
-            value = DateOnlyValue;
-            return true;
-        }
-        else if (Kind == VariantKind.DateTime)
-        {
-            value = DateOnly.FromDateTime(DateTimeValue);
-            return true;
-        }
-        else if (Kind == VariantKind.TimeSpan)
-        {
-            value = DateOnly.FromDateTime(new DateTime(TimeSpanValue.Ticks));
-            return true;
-        }
-        else if (Kind == VariantKind.TimeOnly)
-        {
-            value = default;
-            return true;
-        }
-        else if (Kind == VariantKind.String && DateOnly.TryParse(StringValue, out var dateVal))
-        {
-            value = dateVal;
-            return true;
-        }
-
-        value = default;
-        return false;
-    }
-
-    private bool TryConvertToTimeOnly(out TimeOnly value)
-    {
-        if (Kind == VariantKind.TimeOnly)
-        {
-            value = TimeOnlyValue;
-            return true;
-        }
-        else if (Kind == VariantKind.TimeSpan)
-        {
-            value = TimeOnly.FromTimeSpan(TimeSpanValue);
-            return true;
-        }
-        else if (Kind == VariantKind.DateTime)
-        {
-            value = TimeOnly.FromDateTime(DateTimeValue);
-            return true;
-        }
-        else if (Kind == VariantKind.DateOnly)
-        {
-            value = default;
-            return true;
-        }
-        else if (Kind == VariantKind.String && TimeOnly.TryParse(StringValue, out var timeVal))
-        {
-            value = timeVal;
-            return true;
-        }
-
-        value = default;
-        return false;
-    }
-
-    private bool TryConvertToDateTime(out DateTime value)
-    {
-        if (Kind == VariantKind.DateTime)
-        {
-            value = DateTimeValue;
-            return true;
-        }
-        else if (Kind == VariantKind.DateOnly)
-        {
-            value = DateOnlyValue.ToDateTime(default);
-            return true;
-        }
-        else if (Kind == VariantKind.TimeOnly)
-        {
-            value = new DateTime(TimeOnlyValue.Ticks);
-            return true;
-        }
-        else if (Kind == VariantKind.TimeSpan)
-        {
-            value = new DateTime(TimeSpanValue.Ticks);
-            return true;
-        }
-        else if (Kind == VariantKind.String && DateTime.TryParse(StringValue, out var dateVal))
-        {
-            value = dateVal;
-            return true;
-        }
-
-        value = default;
-        return false;
-    }
-
-    private bool TryConvertToTimeSpan(out TimeSpan value)
-    {
-        if (Kind == VariantKind.TimeSpan)
-        {
-            value = TimeSpanValue;
-            return true;
-        }
-        else if (Kind == VariantKind.DateTime)
-        {
-            value = TimeSpan.FromTicks(DateTimeValue.Ticks);
-            return true;
-        }
-        else if (Kind == VariantKind.DateOnly)
-        {
-            value = TimeSpan.FromDays(DateOnlyValue.DayNumber);
-            return true;
-        }
-        else if (Kind == VariantKind.TimeOnly)
-        {
-            value = TimeSpan.FromTicks(TimeOnlyValue.Ticks);
-            return true;
-        }
-        else if (Kind == VariantKind.String && TimeSpan.TryParse(StringValue, out var timeVal))
-        {
-            value = timeVal;
-            return true;
-        }
-
-        value = default;
-        return false;
-    }
-
-    /// <summary>
-    /// Attempts to convert the value into the specified type.
-    /// Returns true if the value is successfully converted.
-    /// </summary>
-    public bool TryConvertTo<T>([NotNullWhen(true)] out T converted)
-    {
-        var kind = GetKind(typeof(T));
-
-        switch (kind)
-        {
-            case VariantKind.Bool when TryConvertToBool(out var bval) && bval is T tval:
-                converted = tval;
-                return true;
-            case VariantKind.Int8 when TryConvertToInt8(out var i8val) && i8val is T tval:
-                converted = tval;
-                return true;
-            case VariantKind.Int16 when TryConvertToInt16(out var i16val) && i16val is T tval:
-                converted = tval;
-                return true;
-            case VariantKind.Int32 when TryConvertToInt32(out var i32val) && i32val is T tval:
-                converted = tval;
-                return true;
-            case VariantKind.Int64 when TryConvertToInt64(out var i64val) && i64val is T tval:
-                converted = tval;
-                return true;
-            case VariantKind.UInt8 when TryConvertToUInt8(out var u8val) && u8val is T tval:
-                converted = tval;
-                return true;
-            case VariantKind.UInt16 when TryConvertToUInt16(out var u16val) && u16val is T tval:
-                converted = tval;
-                return true;
-            case VariantKind.UInt32 when TryConvertToUInt32(out var u32val) && u32val is T tval:
-                converted = tval;
-                return true;
-            case VariantKind.UInt64 when TryConvertToUInt64(out var u64val) && u64val is T tval:
-                converted = tval;
-                return true;
-            case VariantKind.Float32 when TryConvertToFloat32(out var f32val) && f32val is T tval:
-                converted = tval;
-                return true;
-            case VariantKind.Float64 when TryConvertToFloat64(out var f64val) && f64val is T tval:
-                converted = tval;
-                return true;
-            case VariantKind.Decimal64 when TryConvertToDecimal64(out var d64val) && d64val is T tval:
-                converted = tval;
-                return true;
-            case VariantKind.Decimal128 when TryConvertToDecimal(out var dval) && dval is T tval:
-                converted = tval;
-                return true;
-            case VariantKind.DateOnly when TryConvertToDateOnly(out var doval) && doval is T tval:
-                converted = tval;
-                return true;
-            case VariantKind.TimeOnly when TryConvertToTimeOnly(out var toval) && toval is T tval:
-                converted = tval;
-                return true;
-            case VariantKind.DateTime when TryConvertToDateTime(out var dtval) && dtval is T tval:
-                converted = tval;
-                return true;
-            case VariantKind.TimeSpan when TryConvertToTimeSpan(out var tsval) && tsval is T tval:
-                converted = tval;
-                return true;
-            case VariantKind.Enum:
-                return TryConvertToEnum(out converted);
-            case VariantKind.Object when ObjectValue is T tval:
-                converted = tval;
-                return true;                
-            default:
-                if (typeof(T) == typeof(object)
-                    && ToObject() is T oval)
-                {
-                    converted = oval;
-                    return true;
-                }
-                break;
-        };
-
-        converted = default!;
-        return false;
-    }
-
-    public T ConvertTo<T>() =>
-        TryConvertTo<T>(out var tval) ? tval : throw new InvalidCastException();
-
-    public T ConvertToOrDefault<T>() =>
-        TryConvertTo<T>(out var tval) ? tval : default!;
-
-    /// <summary>
-    /// Attempts to convert the value into the specified parsable type.
-    /// Returns true if the value is successfully converted.
-    /// </summary>
-    public bool TryConvertToParsable<T>([NotNullWhen(true)] out T converted)
-        where T : IParsable<T>
-    {
-        if (TryConvertTo(out converted))
-        {
-            return true;
-        }
-        else if (Kind == VariantKind.String && T.TryParse(StringValue, null, out converted!))
-        {
-            return true;
-        }
-
-        converted = default!;
-        return false;
-    }
-
-    public T ConvertToParsable<T>() where T : IParsable<T> =>
-        TryConvertToParsable<T>(out var tval) ? tval : throw new InvalidCastException();
-
-    public T ConvertToParsableOrDefault<T>() where T : IParsable<T> =>
-        TryConvertToParsable<T>(out var tval) ? tval : default!;
+    public static explicit operator bool?(Variant value) => value. IsNull ? default : value.ToBool();
+    public static implicit operator sbyte?(Variant value) => value.IsNull ? default : value.ToInt8();
+    public static implicit operator short?(Variant value) => value.IsNull ? default : value.ToInt16();
+    public static implicit operator int?(Variant value) => value.IsNull ? default : value.ToInt32();
+    public static implicit operator long?(Variant value) => value.IsNull ? default : value.ToInt64();
+    public static implicit operator byte?(Variant value) => value.IsNull ? default : value.ToByte();
+    public static implicit operator ushort?(Variant value) => value.IsNull ? default : value.ToUInt16();
+    public static implicit operator uint?(Variant value) => value.IsNull ? default : value.ToUInt32();
+    public static implicit operator ulong?(Variant value) => value.IsNull ? default : value.ToUInt64();
+    public static implicit operator float?(Variant value) => value.IsNull ? default : value.ToSingle();
+    public static implicit operator double?(Variant value) => value.IsNull ? default : value.ToDouble();
+    public static implicit operator Decimal64?(Variant value) => value.IsNull ? default : value.ToDecimal64();
+    public static implicit operator decimal?(Variant value) => value.IsNull ? default : value.ToDecimal();
+    public static implicit operator char?(Variant value) => value.IsNull ? default : value.ToChar();
+    public static implicit operator Rune?(Variant value) => value.IsNull ? default : value.ToRune();
+    public static implicit operator DateOnly?(Variant value) => value.IsNull ? default : value.ToDateOnly();
+    public static implicit operator TimeOnly?(Variant value) => value.IsNull ? default : value.ToTimeOnly();
+    public static implicit operator DateTime?(Variant value) => value.IsNull ? default : value.ToDateTime();
+    public static implicit operator TimeSpan?(Variant value) => value.IsNull ? default : value.ToTimeSpan();
+    public static implicit operator Guid?(Variant value) => value.IsNull ? default : value.ToGuid();
 
     private static VariantKind GetKind(Type type)
     {
@@ -1277,49 +967,50 @@ public readonly struct Variant : IEquatable<Variant>, ITypeUnion<Variant>
         }
     }
 
-    private static readonly Dictionary<Type, VariantKind> s_typeToKindMap = new Dictionary<Type, VariantKind>
-    {
-        { typeof(bool), VariantKind.Bool },
-        { typeof(sbyte), VariantKind.Int8 },
-        { typeof(short), VariantKind.Int16 },
-        { typeof(int), VariantKind.Int32 },
-        { typeof(long), VariantKind.Int64 },
-        { typeof(byte), VariantKind.UInt8 },
-        { typeof(ushort), VariantKind.UInt16 },
-        { typeof(uint), VariantKind.UInt32 },
-        { typeof(ulong), VariantKind.UInt64 },
-        { typeof(Decimal64), VariantKind.Decimal64 },
-        { typeof(decimal), VariantKind.Decimal128 },
-        { typeof(float), VariantKind.Float32 },
-        { typeof(double), VariantKind.Float64 },
-        { typeof(char), VariantKind.Char16 },
-        { typeof(Rune), VariantKind.Char32 },
-        { typeof(DateOnly), VariantKind.DateOnly },
-        { typeof(TimeOnly), VariantKind.TimeOnly },
-        { typeof(DateTime), VariantKind.DateTime },
-        { typeof(TimeSpan), VariantKind.TimeSpan },
-        { typeof(string), VariantKind.String },
+    private static readonly Dictionary<Type, VariantKind> s_typeToKindMap = 
+        new Dictionary<Type, VariantKind>
+        {
+            { typeof(bool), VariantKind.Bool },
+            { typeof(sbyte), VariantKind.Int8 },
+            { typeof(short), VariantKind.Int16 },
+            { typeof(int), VariantKind.Int32 },
+            { typeof(long), VariantKind.Int64 },
+            { typeof(byte), VariantKind.UInt8 },
+            { typeof(ushort), VariantKind.UInt16 },
+            { typeof(uint), VariantKind.UInt32 },
+            { typeof(ulong), VariantKind.UInt64 },
+            { typeof(Decimal64), VariantKind.Decimal64 },
+            { typeof(decimal), VariantKind.Decimal128 },
+            { typeof(float), VariantKind.Float32 },
+            { typeof(double), VariantKind.Float64 },
+            { typeof(char), VariantKind.Char16 },
+            { typeof(Rune), VariantKind.Char32 },
+            { typeof(DateOnly), VariantKind.DateOnly },
+            { typeof(TimeOnly), VariantKind.TimeOnly },
+            { typeof(DateTime), VariantKind.DateTime },
+            { typeof(TimeSpan), VariantKind.TimeSpan },
+            { typeof(string), VariantKind.String },
 
-        { typeof(bool?), VariantKind.Bool },
-        { typeof(sbyte?), VariantKind.Int8 },
-        { typeof(short?), VariantKind.Int16 },
-        { typeof(int?), VariantKind.Int32 },
-        { typeof(long?), VariantKind.Int64 },
-        { typeof(byte?), VariantKind.UInt8 },
-        { typeof(ushort?), VariantKind.UInt16 },
-        { typeof(uint?), VariantKind.UInt32 },
-        { typeof(ulong?), VariantKind.UInt64 },
-        { typeof(Decimal64?), VariantKind.Decimal64 },
-        { typeof(decimal?), VariantKind.Decimal128 },
-        { typeof(float?), VariantKind.Float32 },
-        { typeof(double?), VariantKind.Float64 },
-        { typeof(char?), VariantKind.Char16 },
-        { typeof(Rune?), VariantKind.Char32 },
-        { typeof(DateOnly?), VariantKind.DateOnly },
-        { typeof(TimeOnly?), VariantKind.TimeOnly },
-        { typeof(DateTime?), VariantKind.DateTime },
-        { typeof(TimeSpan?), VariantKind.TimeSpan },
-    };
+            { typeof(bool?), VariantKind.Bool },
+            { typeof(sbyte?), VariantKind.Int8 },
+            { typeof(short?), VariantKind.Int16 },
+            { typeof(int?), VariantKind.Int32 },
+            { typeof(long?), VariantKind.Int64 },
+            { typeof(byte?), VariantKind.UInt8 },
+            { typeof(ushort?), VariantKind.UInt16 },
+            { typeof(uint?), VariantKind.UInt32 },
+            { typeof(ulong?), VariantKind.UInt64 },
+            { typeof(Decimal64?), VariantKind.Decimal64 },
+            { typeof(decimal?), VariantKind.Decimal128 },
+            { typeof(float?), VariantKind.Float32 },
+            { typeof(double?), VariantKind.Float64 },
+            { typeof(char?), VariantKind.Char16 },
+            { typeof(Rune?), VariantKind.Char32 },
+            { typeof(DateOnly?), VariantKind.DateOnly },
+            { typeof(TimeOnly?), VariantKind.TimeOnly },
+            { typeof(DateTime?), VariantKind.DateTime },
+            { typeof(TimeSpan?), VariantKind.TimeSpan },
+        };
 
     private enum VariantKind
     {
@@ -1386,86 +1077,1152 @@ public readonly struct Variant : IEquatable<Variant>, ITypeUnion<Variant>
 
         [FieldOffset(0)]
         public char Char16;
-    }
 
-    private class OverlappedInfo
-    {
-        public VariantKind Kind { get; }
-        public Type Type { get; }
-
-        public OverlappedInfo(VariantKind kind, Type type)
+        public Rune Char32
         {
-            this.Kind = kind;
-            this.Type = type;
+            get => new Rune(Int32);
+            set => Int32 = value.Value;
         }
 
-        public static OverlappedInfo Bool = new OverlappedInfo(VariantKind.Bool, typeof(bool));
-        public static OverlappedInfo Int8 = new OverlappedInfo(VariantKind.Int8, typeof(sbyte));
-        public static OverlappedInfo Int16 = new OverlappedInfo(VariantKind.Int16, typeof(short));
-        public static OverlappedInfo Int32 = new OverlappedInfo(VariantKind.Int32, typeof(int));
-        public static OverlappedInfo Int64 = new OverlappedInfo(VariantKind.Int64, typeof(long));
-        public static OverlappedInfo UInt8 = new OverlappedInfo(VariantKind.UInt8, typeof(byte));
-        public static OverlappedInfo UInt16 = new OverlappedInfo(VariantKind.UInt16, typeof(ushort));
-        public static OverlappedInfo UInt32 = new OverlappedInfo(VariantKind.UInt32, typeof(uint));
-        public static OverlappedInfo UInt64 = new OverlappedInfo(VariantKind.UInt64, typeof(ulong));
-        public static OverlappedInfo Float32 = new OverlappedInfo(VariantKind.Float32, typeof(float));
-        public static OverlappedInfo Float64 = new OverlappedInfo(VariantKind.Float64, typeof(double));
-        public static OverlappedInfo Char16 = new OverlappedInfo(VariantKind.Char16, typeof(char));
-        public static OverlappedInfo Char32 = new OverlappedInfo(VariantKind.Char32, typeof(Rune));
-        public static OverlappedInfo Decimal64 = new OverlappedInfo(VariantKind.Decimal64, typeof(Decimal64));
-        public static OverlappedInfo Decimal128 = new OverlappedInfo(VariantKind.Decimal128, typeof(decimal));
-        public static OverlappedInfo DateOnly = new OverlappedInfo(VariantKind.DateOnly, typeof(DateOnly));
-        public static OverlappedInfo TimeOnly = new OverlappedInfo(VariantKind.TimeOnly, typeof(TimeOnly));
-        public static OverlappedInfo DateTime = new OverlappedInfo(VariantKind.DateTime, typeof(DateTime));
-        public static OverlappedInfo TimeSpan = new OverlappedInfo(VariantKind.TimeSpan, typeof(TimeSpan));
-    }
-
-    private abstract class EnumInfo : OverlappedInfo
-    {
-        public EnumInfo(Type type)
-            : base(VariantKind.Enum, type)
+        public DateOnly DateOnly
         {
+            get => DateOnly.FromDayNumber(Int32);
+            set => Int32 = value.DayNumber;
         }
 
-        public abstract bool IsType<TType>(long enumLongValue);
-        public abstract object ConvertToObject(long enumLongValue);
-        public abstract string ConvertToEnumString(long enumLongValue);
-    }
-
-    private class EnumInfo<TEnum> : EnumInfo
-    {
-        public EnumInfo()
-            : base(typeof(TEnum))
+        public TimeOnly TimeOnly
         {
+            get => new TimeOnly(Int64);
+            set => Int64 = value.Ticks;
         }
 
-        public override bool IsType<TType>(long enumLongValue) =>
-            TryConvertLongToEnum<TEnum>(enumLongValue, out var enumValue) 
-            && enumValue is TType;
+        public DateTime DateTime
+        {
+            get => new DateTime(Int64);
+            set => Int64 = value.Ticks;
+        }
 
-        public override object ConvertToObject(long enumLongValue) =>
-            TryConvertLongToEnum<TEnum>(enumLongValue, out var enumValue)
-                ? enumValue
-                : default!;
+        public TimeSpan TimeSpan
+        {
+            get => TimeSpan.FromTicks(Int64);
+            set => Int64 = value.Ticks;
+        }
 
-        public override string ConvertToEnumString(long enumLongValue) =>
-            TryConvertLongToEnum<TEnum>(enumLongValue, out var enumValue) 
-                ? enumValue.ToString()!
-                : "";
+        public Decimal64 Decimal64
+        {
+            get => Decimal64.FromBits(Int64);
+            set => Int64 = value.GetBits();
+        }
     }
 
-    private static ImmutableDictionary<Type, OverlappedInfo> s_typeToInfoMap =
-        ImmutableDictionary<Type, OverlappedInfo>.Empty;
-
-    private static OverlappedInfo GetEnumInfo<TEnum>()
+    private abstract class VariantInfo
     {
-        var map = s_typeToInfoMap;
-        var enumType = typeof(TEnum);
-        if (!map.TryGetValue(enumType, out var info))
+        public abstract Type Type { get; }
+        public abstract VariantKind Kind { get; }
+        public abstract bool IsType<T>(in Variant variant);
+        public abstract bool TryGet<T>(in Variant variant, out T value);
+        public abstract string ToString(in Variant variant);
+        public abstract object ToObject(in Variant variant);
+
+        public virtual int GetHashCode(in Variant variant) =>
+            variant._structValue.Int64.GetHashCode();
+
+        public virtual bool Equals(in Variant variant, in Variant other)
         {
-            info = ImmutableInterlocked.GetOrAdd(ref s_typeToInfoMap, enumType, new EnumInfo<TEnum>());
+            return false;
         }
-        return info;
+
+        public virtual bool TryConvertToInt64(in Variant variant, out long value) 
+        { 
+            value = default; 
+            return false; 
+        }
+
+        public virtual bool TryConvertToDecimal(in Variant variant, out decimal value)
+        {
+            if (TryConvertToInt64(in variant, out var int64Value))
+            {
+                value = int64Value;
+                return true;
+            }
+            value = default;
+            return false;
+        }
+
+        public virtual bool TryConvertToBool(in Variant variant, out bool value)
+        {
+            if (TryConvertToInt64(in variant, out var longVal))
+            {
+                value = longVal != 0;
+                return true;
+            }
+            value = default;
+            return false;
+        }
+
+        public virtual bool TryConvertToInt8(in Variant variant, out sbyte value)
+        {
+            if (TryConvertToInt64(in variant, out var val)
+                && val >= sbyte.MinValue && val <= sbyte.MaxValue)
+            {
+                value = (sbyte)val;
+                return true;
+            }
+            value = default;
+            return false;
+        }
+
+        public virtual bool TryConvertToInt16(in Variant variant, out short value)
+        {
+            if (TryConvertToInt64(in variant, out var val)
+                && val >= short.MinValue && val <= short.MaxValue)
+            {
+                value = (short)val;
+                return true;
+            }
+            value = default;
+            return false;
+        }
+
+        public virtual bool TryConvertToInt32(in Variant variant, out int value)
+        {
+            if (TryConvertToInt64(in variant, out var val)
+                && val >= int.MinValue && val <= int.MaxValue)
+            {
+                value = (int)val;
+                return true;
+            }
+            value = default;
+            return false;
+        }
+
+        public virtual bool TryConvertToUInt8(in Variant variant, out byte value)
+        {
+            if (TryConvertToInt64(in variant, out var val)
+                && val >= byte.MinValue && val <= byte.MaxValue)
+            {
+                value = (byte)val;
+                return true;
+            }
+            value = default;
+            return false;
+        }
+
+        public virtual bool TryConvertToUInt16(in Variant variant, out ushort value)
+        {
+            if (TryConvertToInt64(in variant, out var val)
+                && val >= ushort.MinValue && val <= ushort.MaxValue)
+            {
+                value = (ushort)val;
+                return true;
+            }
+            value = default;
+            return false;
+        }
+
+        public virtual bool TryConvertToUInt32(in Variant variant, out uint value)
+        {
+            if (TryConvertToInt64(in variant, out var val)
+                && val >= uint.MinValue && val <= uint.MaxValue)
+            {
+                value = (uint)val;
+                return true;
+            }
+            value = default;
+            return false;
+        }
+
+        public virtual bool TryConvertToUInt64(in Variant variant, out ulong value)
+        {
+            if (TryConvertToDecimal(in variant, out var val)
+                && val >= ulong.MinValue && val <= ulong.MaxValue)
+            {
+                value = (ulong)val;
+                return true;
+            }
+            value = default;
+            return false;
+        }
+
+        public virtual bool TryConvertToDecimal64(in Variant variant, out Decimal64 value)
+        {
+            if (TryConvertToDecimal(in variant, out var decVal))
+            {
+                return Dumbo.Decimal64.TryConvert(decVal, out value);
+            }
+            value = default;
+            return false;
+        }
+
+        public virtual bool TryConvertToFloat32(in Variant variant, out float value)
+        {
+            if (TryConvertToDecimal(in variant, out var decVal))
+            {
+                value = (float)decVal;
+                return true;
+            }
+            value = default;
+            return false;
+        }
+
+        public virtual bool TryConvertToFloat64(in Variant variant, out double value)
+        {
+            if (TryConvertToDecimal(in variant, out var decVal))
+            {
+                value = (double)decVal;
+                return true;
+            }
+            value = default;
+            return false;
+        }
+
+        public virtual bool TryConvertToChar16(in Variant variant, out char value)
+        {
+            if (TryConvertToInt16(in variant, out var shortValue))
+            {
+                value = (char)shortValue;
+                return true;
+            }
+            value = default;
+            return false;
+        }
+
+        public virtual bool TryConvertToChar32(in Variant variant, out Rune value)
+        {
+            if (TryConvertToInt32(in variant, out var intValue)
+                && intValue >= int.MinValue && intValue <= int.MaxValue
+                && Rune.IsValid(intValue))
+            {
+                value = new Rune(intValue);
+                return true;
+            }
+            value = default;
+            return false;
+        }
+
+        public virtual bool TryConvertToDateOnly(in Variant variant, out DateOnly converted)
+        {
+            converted = default;
+            return false;
+        }
+
+        public virtual bool TryConvertToTimeOnly(in Variant variant, out TimeOnly converted)
+        {
+            converted = default;
+            return false;
+        }
+
+        public virtual bool TryConvertToDateTime(in Variant variant, out DateTime converted)
+        {
+            converted = default;
+            return false;
+        }
+
+        public virtual bool TryConvertToTimeSpan(in Variant variant, out TimeSpan converted)
+        {
+            converted = default;
+            return false;
+        }
+
+        public static VariantInfo Bool = new BoolInfo();
+        public static VariantInfo Int8 = new Int8Info();
+        public static VariantInfo Int16 = new Int16Info();
+        public static VariantInfo Int32 = new Int32Info();
+        public static VariantInfo Int64 = new Int64Info();
+        public static VariantInfo UInt8 = new UInt8Info();
+        public static VariantInfo UInt16 = new UInt16Info();
+        public static VariantInfo UInt32 = new UInt32Info();
+        public static VariantInfo UInt64 = new UInt64Info();
+        public static VariantInfo Float32 = new Float32Info();
+        public static VariantInfo Float64 = new Float64Info();
+        public static VariantInfo Char16 = new Char16Info();
+        public static VariantInfo Char32 = new Char32Info();
+        public static VariantInfo Decimal64 = new Decimal64Info();
+        public static VariantInfo Decimal128 = new Decimal128Info();
+        public static VariantInfo DateOnly = new DateOnlyInfo();
+        public static VariantInfo TimeOnly = new TimeOnlyInfo();
+        public static VariantInfo DateTime = new DateTimeInfo();
+        public static VariantInfo TimeSpan = new TimeSpanInfo();
+
+        private sealed class BoolInfo : VariantInfo
+        {
+            public override Type Type => typeof(bool);
+            public override VariantKind Kind => VariantKind.Bool;
+            public bool GetValue(in Variant variant) => variant._structValue.Bool;
+
+            public override bool IsType<T>(in Variant variant) =>
+                typeof(T) == typeof(bool) || GetValue(in variant) is T;
+
+            public override bool TryGet<T>(in Variant variant, out T value)
+            {
+                if (GetValue(in variant) is T tval)
+                {
+                    value = tval;
+                    return true;
+                }
+                value = default!;
+                return false;
+            }
+
+            public override object ToObject(in Variant variant) =>
+                GetValue(in variant);
+
+            public override string ToString(in Variant variant) =>
+                GetValue(in variant).ToString();
+
+            public override bool TryConvertToInt64(in Variant variant, out long int64Value) 
+            { 
+                int64Value = GetValue(in variant) ? 1 : 0; 
+                return true; 
+            }
+
+            public override bool Equals(in Variant variant, in Variant other) =>
+                other.TryConvertToBool(out var otherValue)
+                && GetValue(in variant) == otherValue;
+        }
+
+        private sealed class Int8Info : VariantInfo
+        {
+            public override Type Type => typeof(sbyte);
+            public override VariantKind Kind => VariantKind.Int8;
+            public sbyte GetValue(in Variant variant) => variant._structValue.Int8;
+
+            public override bool IsType<T>(in Variant variant) =>
+                typeof(T) == typeof(sbyte) || GetValue(in variant) is T;
+
+            public override bool TryGet<T>(in Variant variant, out T value)
+            {
+                if (GetValue(in variant) is T tval)
+                {
+                    value = tval;
+                    return true;
+                }
+                value = default!;
+                return false;
+            }
+
+            public override object ToObject(in Variant variant) =>
+                GetValue(in variant);
+
+            public override string ToString(in Variant variant) =>
+                GetValue(in variant).ToString();
+
+            public override bool TryConvertToInt64(in Variant variant, out long int64Value)
+            {
+                int64Value = GetValue(in variant);
+                return true;
+            }
+
+            public override bool Equals(in Variant variant, in Variant other) =>
+                other.TryConvertToInt8(out var otherValue)
+                && GetValue(in variant) == otherValue;
+        }
+
+        private sealed class Int16Info : VariantInfo
+        {
+            public override Type Type => typeof(short);
+            public override VariantKind Kind => VariantKind.Int16;
+            public short GetValue(in Variant variant) => variant._structValue.Int16;
+
+            public override bool IsType<T>(in Variant variant) =>
+                typeof(T) == typeof(short) || GetValue(in variant) is T;
+
+            public override bool TryGet<T>(in Variant variant, out T value)
+            {
+                if (GetValue(in variant) is T tval)
+                {
+                    value = tval;
+                    return true;
+                }
+                value = default!;
+                return false;
+            }
+
+            public override object ToObject(in Variant variant) =>
+                GetValue(in variant);
+
+            public override string ToString(in Variant variant) =>
+                GetValue(in variant).ToString();
+
+            public override bool TryConvertToInt64(in Variant variant, out long int64Value)
+            {
+                int64Value = GetValue(in variant);
+                return true;
+            }
+
+            public override bool Equals(in Variant variant, in Variant other) =>
+                other.TryConvertToInt16(out var otherValue)
+                && GetValue(in variant) == otherValue;
+        }
+
+        private sealed class Int32Info : VariantInfo
+        {
+            public override Type Type => typeof(int);
+            public override VariantKind Kind => VariantKind.Int32;
+            public int GetValue(in Variant variant) => variant._structValue.Int32;
+
+            public override bool IsType<T>(in Variant variant) =>
+                typeof(T) == typeof(int) || GetValue(in variant) is T;
+
+            public override bool TryGet<T>(in Variant variant, out T value)
+            {
+                if (GetValue(in variant) is T tval)
+                {
+                    value = tval;
+                    return true;
+                }
+                value = default!;
+                return false;
+            }
+
+            public override object ToObject(in Variant variant) =>
+                GetValue(in variant);
+
+            public override string ToString(in Variant variant) =>
+                GetValue(in variant).ToString();
+
+            public override bool TryConvertToInt64(in Variant variant, out long int64Value)
+            {
+                int64Value = GetValue(in variant);
+                return true;
+            }
+
+            public override bool Equals(in Variant variant, in Variant other) =>
+                other.TryConvertToInt32(out var otherValue)
+                && GetValue(in variant) == otherValue;
+        }
+
+        private sealed class Int64Info : VariantInfo
+        {
+            public override Type Type => typeof(long);
+            public override VariantKind Kind => VariantKind.Int64;
+            public long GetValue(in Variant variant) => variant._structValue.Int64;
+
+            public override bool IsType<T>(in Variant variant) =>
+                typeof(T) == typeof(long) || GetValue(in variant) is T;
+
+            public override bool TryGet<T>(in Variant variant, out T value)
+            {
+                if (GetValue(in variant) is T tval)
+                {
+                    value = tval;
+                    return true;
+                }
+                value = default!;
+                return false;
+            }
+
+            public override object ToObject(in Variant variant) =>
+                GetValue(in variant);
+
+            public override string ToString(in Variant variant) =>
+                GetValue(in variant).ToString();
+
+            public override bool TryConvertToInt64(in Variant variant, out long int64Value)
+            {
+                int64Value = GetValue(in variant);
+                return true;
+            }
+
+            public override bool Equals(in Variant variant, in Variant other) =>
+                other.TryConvertToInt64(out var otherValue)
+                && GetValue(in variant) == otherValue;
+        }
+
+        private sealed class UInt8Info : VariantInfo
+        {
+            public override Type Type => typeof(byte);
+            public override VariantKind Kind => VariantKind.UInt8;
+            public byte GetValue(in Variant variant) => variant._structValue.UInt8;
+
+            public override bool IsType<T>(in Variant variant) =>
+                typeof(T) == typeof(byte) || GetValue(in variant) is T;
+
+            public override bool TryGet<T>(in Variant variant, out T value)
+            {
+                if (GetValue(in variant) is T tval)
+                {
+                    value = tval;
+                    return true;
+                }
+                value = default!;
+                return false;
+            }
+
+            public override object ToObject(in Variant variant) =>
+                GetValue(in variant);
+
+            public override string ToString(in Variant variant) =>
+                GetValue(in variant).ToString();
+
+            public override bool TryConvertToInt64(in Variant variant, out long int64Value)
+            {
+                int64Value = GetValue(in variant);
+                return true;
+            }
+
+            public override bool Equals(in Variant variant, in Variant other) =>
+                other.TryConvertToInt8(out var otherValue)
+                && GetValue(in variant) == otherValue;
+        }
+
+        private sealed class UInt16Info : VariantInfo
+        {
+            public override Type Type => typeof(ushort);
+            public override VariantKind Kind => VariantKind.UInt16;
+            public ushort GetValue(in Variant variant) => variant._structValue.UInt16;
+
+            public override bool IsType<T>(in Variant variant) =>
+                typeof(T) == typeof(ushort) || GetValue(in variant) is T;
+
+            public override bool TryGet<T>(in Variant variant, out T value)
+            {
+                if (GetValue(in variant) is T tval)
+                {
+                    value = tval;
+                    return true;
+                }
+                value = default!;
+                return false;
+            }
+
+            public override object ToObject(in Variant variant) =>
+                GetValue(in variant);
+
+            public override string ToString(in Variant variant) =>
+                GetValue(in variant).ToString();
+
+            public override bool TryConvertToInt64(in Variant variant, out long int64Value)
+            {
+                int64Value = GetValue(in variant);
+                return true;
+            }
+
+            public override bool Equals(in Variant variant, in Variant other) =>
+                other.TryConvertToUInt16(out var otherValue)
+                && GetValue(in variant) == otherValue;
+        }
+
+        private sealed class UInt32Info : VariantInfo
+        {
+            public override Type Type => typeof(uint);
+            public override VariantKind Kind => VariantKind.UInt32;
+            public uint GetValue(in Variant variant) => variant._structValue.UInt32;
+
+            public override bool IsType<T>(in Variant variant) =>
+                typeof(T) == typeof(uint) || GetValue(in variant) is T;
+
+            public override bool TryGet<T>(in Variant variant, out T value)
+            {
+                if (GetValue(in variant) is T tval)
+                {
+                    value = tval;
+                    return true;
+                }
+                value = default!;
+                return false;
+            }
+
+            public override object ToObject(in Variant variant) =>
+                GetValue(in variant);
+
+            public override string ToString(in Variant variant) =>
+                GetValue(in variant).ToString();
+
+            public override bool TryConvertToInt64(in Variant variant, out long int64Value)
+            {
+                int64Value = GetValue(in variant);
+                return true;
+            }
+
+            public override bool Equals(in Variant variant, in Variant other) =>
+                other.TryConvertToUInt32(out var otherValue)
+                && GetValue(in variant) == otherValue;
+        }
+
+        private sealed class UInt64Info : VariantInfo
+        {
+            public override Type Type => typeof(ulong);
+            public override VariantKind Kind => VariantKind.UInt64;
+            public ulong GetValue(in Variant variant) => variant._structValue.UInt64;
+
+            public override bool IsType<T>(in Variant variant) =>
+                typeof(T) == typeof(ulong) || GetValue(in variant) is T;
+
+            public override bool TryGet<T>(in Variant variant, out T value)
+            {
+                if (GetValue(in variant) is T tval)
+                {
+                    value = tval;
+                    return true;
+                }
+                value = default!;
+                return false;
+            }
+
+            public override object ToObject(in Variant variant) =>
+                GetValue(in variant);
+
+            public override string ToString(in Variant variant) =>
+                GetValue(in variant).ToString();
+
+            public override bool TryConvertToInt64(in Variant variant, out long value)
+            {
+                var val = GetValue(in variant);
+                if (val <= long.MaxValue)
+                {
+                    value = unchecked((long)val);
+                    return true;
+                }
+                value = default;
+                return false;
+            }
+
+            public override bool TryConvertToDecimal(in Variant variant, out decimal value)
+            {
+                value = GetValue(in variant);
+                return true;
+            }
+
+            public override bool Equals(in Variant variant, in Variant other) =>
+                other.TryConvertToUInt64(out var otherValue)
+                && GetValue(in variant) == otherValue;
+        }
+
+        private sealed class Float32Info : VariantInfo
+        {
+            public override Type Type => typeof(float);
+            public override VariantKind Kind => VariantKind.Float32;
+            public float GetValue(in Variant variant) => variant._structValue.Float32;
+
+            public override bool IsType<T>(in Variant variant) =>
+                typeof(T) == typeof(float) || GetValue(in variant) is T;
+
+            public override bool TryGet<T>(in Variant variant, out T value)
+            {
+                if (GetValue(in variant) is T tval)
+                {
+                    value = tval;
+                    return true;
+                }
+                value = default!;
+                return false;
+            }
+
+            public override object ToObject(in Variant variant) =>
+                GetValue(in variant);
+
+            public override string ToString(in Variant variant) =>
+                GetValue(in variant).ToString();
+
+            public override bool TryConvertToInt64(in Variant variant, out long value)
+            {
+                var val = GetValue(in variant);
+                if (val >= long.MinValue && val <= long.MaxValue)
+                {
+                    value = (long)val;
+                    return true;
+                }
+                value = default;
+                return true;
+            }
+
+            public override bool TryConvertToFloat64(in Variant variant, out double value)
+            {
+                value = GetValue(in variant);
+                return true;
+            }
+
+            public override bool TryConvertToDecimal(in Variant variant, out decimal value)
+            {
+                var val = GetValue(in variant);
+                if (val >= (double)decimal.MinValue && val <= (double)decimal.MaxValue)
+                {
+                    value = (decimal)val;
+                    return true;
+                }
+                value = default;
+                return true;
+            }
+
+            public override bool Equals(in Variant variant, in Variant other) =>
+                other.TryConvertToSingle(out var otherValue)
+                && GetValue(in variant) == otherValue;
+        }
+
+        private sealed class Float64Info : VariantInfo
+        {
+            public override Type Type => typeof(double);
+            public override VariantKind Kind => VariantKind.Float64;
+            public double GetValue(in Variant variant) => variant._structValue.Float64;
+
+            public override bool IsType<T>(in Variant variant) =>
+                typeof(T) == typeof(double) || GetValue(in variant) is T;
+
+            public override bool TryGet<T>(in Variant variant, out T value)
+            {
+                if (GetValue(in variant) is T tval)
+                {
+                    value = tval;
+                    return true;
+                }
+                value = default!;
+                return false;
+            }
+
+            public override object ToObject(in Variant variant) =>
+                GetValue(in variant);
+
+            public override string ToString(in Variant variant) =>
+                GetValue(in variant).ToString();
+
+            public override bool TryConvertToInt64(in Variant variant, out long value)
+            {
+                var val = GetValue(in variant);
+                if (val >= long.MinValue && val <= long.MaxValue)
+                {
+                    value = (long)val;
+                    return true;
+                }
+                value = default;
+                return true;
+            }
+
+            public override bool TryConvertToFloat64(in Variant variant, out double value)
+            {
+                value = GetValue(in variant);
+                return true;
+            }
+
+            public override bool TryConvertToDecimal(in Variant variant, out decimal value)
+            {
+                var val = GetValue(in variant);
+                if (val >= (double)decimal.MinValue && val <= (double)decimal.MaxValue)
+                {
+                    value = (decimal)val;
+                    return true;
+                }
+                value = default;
+                return true;
+            }
+
+            public override bool Equals(in Variant variant, in Variant other) =>
+                other.TryConvertToDouble(out var otherValue)
+                && GetValue(in variant) == otherValue;
+        }
+
+        private sealed class Decimal64Info : VariantInfo
+        {
+            public override Type Type => typeof(Decimal64);
+            public override VariantKind Kind => VariantKind.Decimal64;
+            public Decimal64 GetValue(in Variant variant) => variant._structValue.Decimal64;
+
+            public override bool IsType<T>(in Variant variant) =>
+                typeof(T) == typeof(Decimal64) || GetValue(in variant) is T;
+
+            public override bool TryGet<T>(in Variant variant, out T value)
+            {
+                if (GetValue(in variant) is T tval)
+                {
+                    value = tval;
+                    return true;
+                }
+                value = default!;
+                return false;
+            }
+
+            public override object ToObject(in Variant variant) =>
+                GetValue(in variant);
+
+            public override string ToString(in Variant variant) =>
+                GetValue(in variant).ToString();
+
+            public override bool TryConvertToInt64(in Variant variant, out long value)
+            {
+                var val = GetValue(in variant);
+                if (val >= long.MinValue && val <= long.MaxValue)
+                {
+                    value = (long)val;
+                    return true;
+                }
+                value = default;
+                return true;
+            }
+
+            public override bool TryConvertToDecimal(in Variant variant, out decimal decValue)
+            {
+                var val = GetValue(in variant);
+                if (val >= decimal.MinValue && val <= decimal.MaxValue)
+                {
+                    decValue = (decimal)val;
+                    return true;
+                }
+                decValue = default;
+                return true;
+            }
+
+            public override bool Equals(in Variant variant, in Variant other) =>
+                other.TryConvertToDecimal64(out var otherValue)
+                && GetValue(in variant) == otherValue;
+        }
+
+        private sealed class Decimal128Info : VariantInfo
+        {
+            public override Type Type => typeof(decimal);
+            public override VariantKind Kind => VariantKind.Decimal128;
+            public decimal GetValue(in Variant variant) => variant._structValue.Decimal64;
+
+            public override bool IsType<T>(in Variant variant) =>
+                typeof(T) == typeof(decimal) || GetValue(in variant) is T;
+
+            public override bool TryGet<T>(in Variant variant, out T value)
+            {
+                if (GetValue(in variant) is T tval)
+                {
+                    value = tval;
+                    return true;
+                }
+                value = default!;
+                return false;
+            }
+
+            public override object ToObject(in Variant variant) =>
+                GetValue(in variant);
+
+            public override string ToString(in Variant variant) =>
+                GetValue(in variant).ToString();
+
+            public override bool TryConvertToInt64(in Variant variant, out long value)
+            {
+                var val = GetValue(in variant);
+                if (val >= long.MinValue && val <= long.MaxValue)
+                {
+                    value = (long)val;
+                    return true;
+                }
+                value = default;
+                return true;
+            }
+
+            public override bool TryConvertToDecimal(in Variant variant, out decimal value)
+            {
+                var val = GetValue(in variant);
+                if (val >= decimal.MinValue && val <= decimal.MaxValue)
+                {
+                    value = val;
+                    return true;
+                }
+                value = default;
+                return true;
+            }
+
+            public override bool Equals(in Variant variant, in Variant other) =>
+                other.TryConvertToDecimal(out var otherValue)
+                && GetValue(in variant) == otherValue;
+        }
+
+        private sealed class Char16Info : VariantInfo
+        {
+            public override Type Type => typeof(char);
+            public override VariantKind Kind => VariantKind.Char16;
+            public char GetValue(in Variant variant) => variant._structValue.Char16;
+
+            public override bool IsType<T>(in Variant variant) =>
+                typeof(T) == typeof(char) || GetValue(in variant) is T;
+
+            public override bool TryGet<T>(in Variant variant, out T value)
+            {
+                if (GetValue(in variant) is T tval)
+                {
+                    value = tval;
+                    return true;
+                }
+                value = default!;
+                return false;
+            }
+
+            public override object ToObject(in Variant variant) =>
+                GetValue(in variant);
+
+            public override string ToString(in Variant variant) =>
+                GetValue(in variant).ToString();
+
+            public override bool TryConvertToInt64(in Variant variant, out long value)
+            {
+                value = GetValue(in variant);
+                return true;
+            }
+
+            public override bool Equals(in Variant variant, in Variant other) =>
+                other.TryConvertToChar(out var otherValue)
+                && GetValue(in variant) == otherValue;
+        }
+
+        private sealed class Char32Info : VariantInfo
+        {
+            public override Type Type => typeof(Rune);
+            public override VariantKind Kind => VariantKind.Char32;
+            public Rune GetValue(in Variant variant) => variant._structValue.Char32;
+
+            public override bool IsType<T>(in Variant variant) =>
+                typeof(T) == typeof(Rune) || GetValue(in variant) is T;
+
+            public override bool TryGet<T>(in Variant variant, out T value)
+            {
+                if (GetValue(in variant) is T tval)
+                {
+                    value = tval;
+                    return true;
+                }
+                value = default!;
+                return false;
+            }
+
+            public override object ToObject(in Variant variant) =>
+                GetValue(in variant);
+
+            public override string ToString(in Variant variant) =>
+                GetValue(in variant).ToString();
+
+            public override bool TryConvertToInt64(in Variant variant, out long value)
+            {
+                value = GetValue(in variant).Value;
+                return true;
+            }
+
+            public override bool Equals(in Variant variant, in Variant other) =>
+                other.TryConvertToRune(out var otherValue)
+                && GetValue(in variant) == otherValue;
+        }
+
+        private sealed class DateOnlyInfo : VariantInfo
+        {
+            public override Type Type => typeof(DateOnly);
+            public override VariantKind Kind => VariantKind.DateOnly;
+            public DateOnly GetValue(in Variant variant) => variant._structValue.DateOnly;
+
+            public override bool IsType<T>(in Variant variant) =>
+                typeof(T) == typeof(DateOnly) || GetValue(in variant) is T;
+
+            public override bool TryGet<T>(in Variant variant, out T value)
+            {
+                if (GetValue(in variant) is T tval)
+                {
+                    value = tval;
+                    return true;
+                }
+                value = default!;
+                return false;
+            }
+
+            public override object ToObject(in Variant variant) =>
+                GetValue(in variant);
+
+            public override string ToString(in Variant variant) =>
+                GetValue(in variant).ToString();
+
+            public override bool TryConvertToDateOnly(in Variant variant, out DateOnly value)
+            {
+                value = GetValue(in variant);
+                return true;
+            }
+
+            public override bool TryConvertToDateTime(in Variant variant, out DateTime value)
+            {
+                value = GetValue(in variant).ToDateTime(default);
+                return true;
+            }
+
+            public override bool Equals(in Variant variant, in Variant other) =>
+                other.TryConvertToDateOnly(out var otherValue)
+                && GetValue(in variant) == otherValue;
+        }
+
+        private sealed class TimeOnlyInfo : VariantInfo
+        {
+            public override Type Type => typeof(TimeOnly);
+            public override VariantKind Kind => VariantKind.TimeOnly;
+            public TimeOnly GetValue(in Variant variant) => variant._structValue.TimeOnly;
+
+            public override bool IsType<T>(in Variant variant) =>
+                typeof(T) == typeof(TimeOnly) || GetValue(in variant) is T;
+
+            public override bool TryGet<T>(in Variant variant, out T tvalue)
+            {
+                if (GetValue(in variant) is T tval)
+                {
+                    tvalue = tval;
+                    return true;
+                }
+                tvalue = default!;
+                return false;
+            }
+
+            public override object ToObject(in Variant variant) =>
+                GetValue(in variant);
+
+            public override string ToString(in Variant variant) =>
+                GetValue(in variant).ToString();
+
+            public override bool TryConvertToTimeOnly(in Variant variant, out TimeOnly value)
+            {
+                value = GetValue(in variant);
+                return true;
+            }
+
+            public override bool TryConvertToTimeSpan(in Variant variant, out TimeSpan value)
+            {
+                value = GetValue(in variant).ToTimeSpan();
+                return true;
+            }
+
+            public override bool TryConvertToDateTime(in Variant variant, out DateTime value)
+            {
+                value = default(DateOnly).ToDateTime(GetValue(in variant));
+                return true;
+            }
+
+            public override bool Equals(in Variant variant, in Variant other) =>
+                other.TryConvertToTimeOnly(out var otherValue)
+                && GetValue(in variant) == otherValue;
+        }
+
+        private sealed class DateTimeInfo : VariantInfo
+        {
+            public override Type Type => typeof(DateTime);
+            public override VariantKind Kind => VariantKind.DateTime;
+            public DateTime GetValue(in Variant variant) => variant._structValue.DateTime;
+
+            public override bool IsType<T>(in Variant variant) =>
+                typeof(T) == typeof(DateTime) || GetValue(in variant) is T;
+
+            public override bool TryGet<T>(in Variant variant, out T value)
+            {
+                if (GetValue(in variant) is T tval)
+                {
+                    value = tval;
+                    return true;
+                }
+                value = default!;
+                return false;
+            }
+
+            public override object ToObject(in Variant variant) =>
+                GetValue(in variant);
+
+            public override string ToString(in Variant variant) =>
+                GetValue(in variant).ToString();
+
+            public override bool TryConvertToDateTime(in Variant variant, out DateTime value)
+            {
+                value = GetValue(in variant);
+                return true;
+            }
+
+            public override bool Equals(in Variant variant, in Variant other) =>
+                other.TryConvertToDateTime(out var otherValue)
+                && GetValue(in variant) == otherValue;
+        }
+
+        private sealed class TimeSpanInfo : VariantInfo
+        {
+            public override Type Type => typeof(TimeSpan);
+            public override VariantKind Kind => VariantKind.TimeSpan;
+            public TimeSpan GetValue(in Variant variant) => variant._structValue.TimeSpan;
+
+            public override bool IsType<T>(in Variant variant) =>
+                typeof(T) == typeof(TimeSpan) || GetValue(in variant) is T;
+
+            public override bool TryGet<T>(in Variant variant, out T value)
+            {
+                if (GetValue(in variant) is T tval)
+                {
+                    value = tval;
+                    return true;
+                }
+                value = default!;
+                return false;
+            }
+
+            public override object ToObject(in Variant variant) =>
+                GetValue(in variant);
+
+            public override string ToString(in Variant variant) =>
+                GetValue(in variant).ToString();
+
+            public override bool TryConvertToTimeOnly(in Variant variant, out TimeOnly value)
+            {
+                value = new TimeOnly(GetValue(in variant).Ticks);
+                return true;
+            }
+
+            public override bool TryConvertToDateTime(in Variant variant, out DateTime value)
+            {
+                value = new DateTime(GetValue(in variant).Ticks);
+                return true;
+            }
+
+            public override bool Equals(in Variant variant, in Variant other) =>
+                other.TryConvertToTimeSpan(out var otherValue)
+                && GetValue(in variant) == otherValue;
+        }
+
+        private class EnumInfo<TEnum> : VariantInfo
+        {
+            public override Type Type => typeof(TEnum);
+            public override VariantKind Kind => VariantKind.Enum;
+            public long GetValue(in Variant variant) => variant._structValue.Int64;
+
+            public override bool IsType<TType>(in Variant variant) =>
+                typeof(TType) == typeof(TEnum)
+                || (TryConvertLongToEnum<TEnum>(GetValue(in variant), out var value) && value is TType);
+
+            public override bool TryGet<T>(in Variant variant, out T value)
+            {
+                if (TryConvertLongToEnum<TEnum>(GetValue(in variant), out var enumValue)
+                    && enumValue is T tval)
+                {
+                    value = tval;
+                    return true;
+                }
+                value = default!;
+                return false;
+            }
+
+            public override object ToObject(in Variant variant) =>
+                TryConvertLongToEnum<TEnum>(GetValue(in variant), out var enumValue)
+                    ? enumValue
+                    : default!;
+
+            public override string ToString(in Variant variant) =>
+                TryConvertLongToEnum<TEnum>(GetValue(in variant), out var enumValue)
+                    ? enumValue?.ToString() ?? ""
+                    : "";
+
+            public override bool TryConvertToInt64(in Variant variant, out long value)
+            {
+                value = GetValue(in variant);
+                return true;
+            }
+
+            public override bool Equals(in Variant variant, in Variant other) =>
+                other.TryConvertToInt64(out var otherValue)
+                && GetValue(in variant) == otherValue;
+        }
+
+        private static ImmutableDictionary<Type, VariantInfo> s_typeToInfoMap =
+            ImmutableDictionary<Type, VariantInfo>.Empty;
+
+        public static VariantInfo GetEnumInfo<TEnum>()
+        {
+            var map = s_typeToInfoMap;
+            var enumType = typeof(TEnum);
+            if (!map.TryGetValue(enumType, out var info))
+            {
+                info = ImmutableInterlocked.GetOrAdd(ref s_typeToInfoMap, enumType, new EnumInfo<TEnum>());
+            }
+            return info;
+        }
     }
 
     private static long ConvertEnumToLong<TEnum>(TEnum value)

@@ -1,67 +1,146 @@
 ﻿using BenchmarkDotNet.Attributes;
 using System.Drawing;
-using B = Dumbo.TypeUnions.Existing.Boxed;
-using F = Dumbo.TypeUnions.Existing.Fat;
-using H = Dumbo.TypeUnions.Existing.Hybrid;
+using B = Dumbo.TypeUnions.Boxed;
+using F = Dumbo.TypeUnions.Fat;
+using H = Dumbo.TypeUnions.Hybrid;
+using EB = Dumbo.TypeUnions.Existing.Boxed;
+using EF = Dumbo.TypeUnions.Existing.Fat;
+using EH = Dumbo.TypeUnions.Existing.Hybrid;
 
 namespace Benchmarks;
 
-[MemoryDiagnoser]
-public class OneOfIntStringPointBenchmarks
+// [MemoryDiagnoser]
+public class StringIntOrPoint_Create
 {
-    private readonly Point point = new Point(1, 1);
-
     [Benchmark]
-    public void IntBoxed()
+    public void Int_OneOf_Boxed()
     {
-        var union = B.OneOf<int, string, Point>.Create(1);
+        var union = EB.OneOf<int, string, Point>.Create(1);
     }
 
     [Benchmark]
-    public void IntFat()
+    public void Int_OneOf_Fat()
     {
-        var union = F.OneOf<int, string, Point>.Create(1);
+        var union = EF.OneOf<int, string, Point>.Create(1);
     }
 
     [Benchmark]
-    public void IntHybrid()
+    public void Int_OneOf_Hybrid()
     {
-        var union = H.OneOf<int, string, Point>.Create(1);
+        var union = EH.OneOf<int, string, Point>.Create(1);
     }
 
     [Benchmark]
-    public void StringBoxed()
+    public void Int_StringIntOrPoint_Fat()
     {
-        var union = B.OneOf<string, int, Point>.Create("one");
+        var unin = F.StringIntOrPoint.Create(1);
     }
 
     [Benchmark]
-    public void StringFat()
+    public void Int_StringIntOrPoint_Boxed()
     {
-        var union = F.OneOf<string, int, Point>.Create("one");
+        var unin = B.StringIntOrPoint.Create(1);
     }
 
     [Benchmark]
-    public void StringHybrid()
+    public void Int_StringIntOrPoint_Hybrid()
     {
-        var union = H.OneOf<string, int, Point>.Create("one");
+        var unin = H.StringIntOrPoint.Create(1);
+    }
+
+#if false
+    [Benchmark]
+    public void String_OneOf_Boxed()
+    {
+        var union = EB.OneOf<string, int, Point>.Create("one");
     }
 
     [Benchmark]
-    public void PointBoxed()
+    public void String_OneOf_Fat()
     {
-        var union = B.OneOf<Point, int, string>.Create(point);
+        var union = EF.OneOf<string, int, Point>.Create("one");
     }
 
     [Benchmark]
-    public void PointFat()
+    public void String_OneOf_Hybrid()
     {
-        var union = F.OneOf<Point, int, string>.Create(point);
+        var union = EH.OneOf<string, int, Point>.Create("one");
     }
 
     [Benchmark]
-    public void PointHybrid()
+    public void Point_OneOf_Boxed()
     {
-        var union = H.OneOf<Point, int, string>.Create(point);
+        var union = EB.OneOf<Point, int, string>.Create(point);
+    }
+
+    [Benchmark]
+    public void Point_OneOf_Fat()
+    {
+        var union = EF.OneOf<Point, int, string>.Create(point);
+    }
+
+    [Benchmark]
+    public void Point_OneOf_Hybrid()
+    {
+        var union = EH.OneOf<Point, int, string>.Create(point);
+    }
+#endif
+}
+
+
+public class StringIntOrPoint_IsType
+{
+    private static readonly EB.OneOf<int, string, Point> OneOf_Boxed_Int = 
+        EB.OneOf<int, string, Point>.Create(1);
+
+    private static readonly EF.OneOf<int, string, Point> OneOf_Fat_Int =
+        EF.OneOf<int, string, Point>.Create(1);
+
+    private static readonly EH.OneOf<int, string, Point> OneOf_Hybrid_Int =
+        EH.OneOf<int, string, Point>.Create(1);
+
+    private static readonly B.StringIntOrPoint StringIntOrPoint_Boxed_Int =
+        B.StringIntOrPoint.Create(1);
+
+    private static readonly H.StringIntOrPoint StringIntOrPoint_Hybrid_Int =
+        H.StringIntOrPoint.Create(1);
+
+    private static readonly F.StringIntOrPoint StringIntOrPoint_Fat_Int =
+        F.StringIntOrPoint.Create(1);
+
+    [Benchmark]
+    public void Int_OneOf_Boxed()
+    {
+        OneOf_Boxed_Int.IsType<int>();
+    }
+
+    [Benchmark]
+    public void Int_OneOf_Fat()
+    {
+        OneOf_Fat_Int.IsType<int>();
+    }
+
+    [Benchmark]
+    public void Int_OneOf_Hybrid()
+    {
+        OneOf_Hybrid_Int.IsType<int>();
+    }
+
+    [Benchmark]
+    public void Int_StringIntOrPoint_Fat()
+    {
+        StringIntOrPoint_Fat_Int.IsType<int>();
+    }
+
+    [Benchmark]
+    public void Int_StringIntOrPoint_Boxed()
+    {
+        StringIntOrPoint_Boxed_Int.IsType<int>();
+    }
+
+    [Benchmark]
+    public void Int_StringIntOrPoint_Hybrid()
+    {
+        StringIntOrPoint_Hybrid_Int.IsType<int>();
     }
 }

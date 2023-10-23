@@ -58,13 +58,13 @@ public readonly struct OneOf<T1, T2> : ITypeUnion<OneOf<T1, T2>>
         return false;
     }
 
-    private int GetIndex(Type type) =>
-          type == typeof(T1) ? 1
-        : type == typeof(T2) ? 2
-        : 0;
-
     public bool IsType<T>() =>
-        GetIndex(typeof(T)) > 0;
+        _index switch
+        {
+            1 => typeof(T) == typeof(T1) || _value1 is T,
+            2 => typeof(T) == typeof(T2) || _value2 is T,
+            _ => false
+        };
 
     public T AsType<T>() =>
         _index switch
@@ -224,12 +224,6 @@ public readonly struct OneOf<T1, T2, T3> : ITypeUnion<OneOf<T1, T2, T3>>
         return false;
     }
 
-    private int GetIndex(Type type) =>
-          type == typeof(T1) ? 1
-        : type == typeof(T2) ? 2
-        : type == typeof(T3) ? 3
-        : 0;
-
     public Type? Type =>
         _index switch
         {
@@ -240,7 +234,13 @@ public readonly struct OneOf<T1, T2, T3> : ITypeUnion<OneOf<T1, T2, T3>>
         };
 
     public bool IsType<T>() =>
-        GetIndex(typeof(T)) > 0;
+        _index switch
+        {
+            1 => typeof(T) == typeof(T1) || _value1 is T,
+            2 => typeof(T) == typeof(T2) || _value2 is T,
+            3 => typeof(T) == typeof(T3) || _value3 is T,
+            _ => false
+        };
 
     public T AsType<T>() =>
         _index switch
