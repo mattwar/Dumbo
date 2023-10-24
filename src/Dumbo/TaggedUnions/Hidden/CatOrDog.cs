@@ -12,7 +12,7 @@ public abstract record CatOrDog
         new DogData(name, isTrained);
 
     public bool IsCat => this is CatData;
-    public bool IsDot => this is DogData;
+    public bool IsDog => this is DogData;
 
     public bool TryGetCat(out string name, out int sleepingSpots)
     {
