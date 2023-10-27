@@ -24,7 +24,7 @@ public readonly struct Option<TValue>
     {
         if (_value.TryGet<TValue>(out var tval))
         {
-            value = tval;
+            value = tval!;
             return true;
         }
         value = default!;

@@ -60,7 +60,7 @@ public readonly struct OneOf<T1, T2> : ITypeUnion<OneOf<T1, T2>>
         _value.IsType<T>();
 
     public T AsType<T>() =>
-        _value.AsType<T>();
+        _value.AsType<T>()!;
 
     public T Get<T>() =>
         _value.Get<T>();

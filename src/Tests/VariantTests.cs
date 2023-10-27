@@ -184,26 +184,41 @@ public class VariantTests
 
     private void TestCreateAndAccess<T>(T value)
     {
+        Console.WriteLine($"TestCreateAndAccess: {typeof(T).Name}: {value}");
+
+        Console.WriteLine("\tCreate");
         var v = Variant.Create(value);
 
         if (value == null)
         {
+            Console.WriteLine("\tType");
             Assert.IsNull(v.Type, "Type");
+            Console.WriteLine("\tIsNull (true)");
             Assert.IsTrue(v.IsNull, "IsNull");
+            Console.WriteLine("\tIsType");
             Assert.IsFalse(v.IsType<T>(), "IsType");
+            Console.WriteLine("\tTryGet");
             Assert.IsFalse(v.TryGet<T>(out _), "TryGet");
+            Console.WriteLine("\tGet");
             Assert.ThrowsException<InvalidCastException>(() => v.Get<T>());
+            Console.WriteLine("\tAsType");
             Assert.AreEqual(default, v.AsType<T>());
         }
         else
         {
             var nonNullT = GetNonNullableType(typeof(T));
+            Console.WriteLine("\tType");
             Assert.AreEqual(nonNullT, v.Type, "Type");
+            Console.WriteLine("IsNull (false)");
             Assert.IsFalse(v.IsNull, "IsNull");
+            Console.WriteLine("\tIsType");
             Assert.IsTrue(v.IsType<T>(), "IsType");
+            Console.WriteLine("\tTryGet");
             Assert.IsTrue(v.TryGet<T>(out var actualValue), "TryGet");
             Assert.AreEqual(value, actualValue, "value");
+            Console.WriteLine("\tGet");
             Assert.AreEqual(value, v.Get<T>());
+            Console.WriteLine("\tAsType");
             Assert.AreEqual(value, v.AsType<T>());
         }
     }

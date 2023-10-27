@@ -1,4 +1,5 @@
-﻿using System.Collections.Immutable;
+﻿#if !VARIANT2
+using System.Collections.Immutable;
 using System.Diagnostics;
 using System.Diagnostics.CodeAnalysis;
 using System.Runtime.InteropServices;
@@ -2289,3 +2290,4 @@ public readonly struct Variant : ITypeUnion<Variant> //, IEquatable<Variant>
         return false;
     }
 }
+#endif
