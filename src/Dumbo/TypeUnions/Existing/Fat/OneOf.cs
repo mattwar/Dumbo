@@ -84,13 +84,18 @@ public readonly struct OneOf<T1, T2> : ITypeUnion<OneOf<T1, T2>>
 
     public bool TryGet<T>([NotNullWhen(true)] out T value)
     {
-        if (IsType<T>())
+        switch (_index)
         {
-            value = Get<T>()!;
-            return true;
+            case 1 when _value1 is T t1:
+                value = t1;
+                return true;
+            case 2 when _value2 is T t2:
+                value = t2;
+                return true;
+            default:
+                value = default!;
+                return false;
         }
-        value = default!;
-        return false;
     }
 
     public Type? Type =>
@@ -262,13 +267,21 @@ public readonly struct OneOf<T1, T2, T3> : ITypeUnion<OneOf<T1, T2, T3>>
 
     public bool TryGet<T>([NotNullWhen(true)] out T value)
     {
-        if (IsType<T>())
+        switch (_index)
         {
-            value = Get<T>()!;
-            return true;
+            case 1 when _value1 is T t1:
+                value = t1;
+                return true;
+            case 2 when _value2 is T t2:
+                value = t2;
+                return true;
+            case 3 when _value3 is T t3:
+                value = t3;
+                return true;
+            default:
+                value = default!;
+                return false;
         }
-        value = default!;
-        return false;
     }
 
     public override string ToString() =>
