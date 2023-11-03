@@ -342,7 +342,7 @@ public readonly struct Variant : ITypeUnion<Variant>
 
     #region Encodings
     /// <summary>
-    /// A type that encodes and decodes a value into and out of a <see cref="Variant"/>
+    /// A type that faciliates access to the value encoded inside a <see cref="Variant"/>
     /// </summary>
     private abstract class VariantEncoding
     {
@@ -366,19 +366,13 @@ public readonly struct Variant : ITypeUnion<Variant>
             {
                 // _bits has the encoding's id
                 var encodingId = (int)variant._bits;
-                return VariantEncoding.GetEncoding(encodingId);
+                return s_encodingList[encodingId];
             }
             else
             {
                 return ReferenceEncoding.Instance;
             }
         }
-
-        /// <summary>
-        /// Returns the <see cref="VariantEncoding"/> associated with the ID.
-        /// </summary>
-        public static VariantEncoding GetEncoding(int id) =>
-            s_encodingList[id];
 
         protected static List<VariantEncoding> s_encodingList =
             new List<VariantEncoding>(capacity: 1024) { null! };
@@ -403,6 +397,9 @@ public readonly struct Variant : ITypeUnion<Variant>
         }
     }
 
+    /// <summary>
+    /// Abstract base for a strongly typed variant encoding.
+    /// </summary>
     private abstract class VariantEncoding<TValue> : VariantEncoding
     {
         public abstract TValue Decode(in Variant variant);
