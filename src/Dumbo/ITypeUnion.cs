@@ -14,6 +14,11 @@ public interface ITypeUnion
     bool TryGet<T>([NotNullWhen(true)] out T value);
     virtual T AsType<T>() => TryGet<T>(out var value) ? value : default!;
     virtual T Get<T>() => TryGet<T>(out var value) ? value : throw new InvalidCastException();
+
+    virtual Variant ToVariant() =>
+        TryGet<object>(out var value)
+            ? Variant.Create(value)
+            : Variant.Null;
 }
 
 public interface ITypeUnion<TSelf> : ITypeUnion

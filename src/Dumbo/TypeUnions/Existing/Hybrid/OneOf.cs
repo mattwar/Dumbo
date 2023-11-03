@@ -70,6 +70,8 @@ public readonly struct OneOf<T1, T2> : ITypeUnion<OneOf<T1, T2>>
 
     public override string ToString() => _value.ToString();
 
+    public Variant ToVariant() => _value;
+
     // equality
     public bool Equals<T>(T other) =>
         _value.Equals(other);

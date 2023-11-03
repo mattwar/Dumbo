@@ -98,8 +98,8 @@ public class VariantTests
 
         TestCreateAndAccess<decimal>(1.0m);
         TestCreateAndAccess<decimal>(0.0m);
-        TestCreateAndAccess<decimal>(decimal.MinValue);
-        TestCreateAndAccess<decimal>(decimal.MaxValue);
+        TestCreateAndAccess<decimal>(decimal.MinValue, isBoxed: true);
+        TestCreateAndAccess<decimal>(decimal.MaxValue, isBoxed: true);
         TestCreateAndAccess<decimal?>(1.0m);
         TestCreateAndAccess<decimal?>(null);
 
@@ -144,34 +144,35 @@ public class VariantTests
         TestCreateAndAccess<string?>("string");
         TestCreateAndAccess<string?>(null);
 
-        TestCreateAndAccess<Guid>(Guid.NewGuid());
-        TestCreateAndAccess<Guid?>(Guid.NewGuid());
+        TestCreateAndAccess<Guid>(Guid.NewGuid(), isBoxed: true);
+        TestCreateAndAccess<Guid?>(Guid.NewGuid(), isBoxed: true);
         TestCreateAndAccess<Guid?>(null);
 
-        TestCreateAndAccess<SomeRecord>(new SomeRecord("one", 1));
-        TestCreateAndAccess<SomeRecord?>(new SomeRecord("one", 1));
-        TestCreateAndAccess<SomeRecord?>(null);
+        TestCreateAndAccess<ReferenceType>(new ReferenceType("one", 1));
+        TestCreateAndAccess<ReferenceType?>(new ReferenceType("one", 1));
+        TestCreateAndAccess<ReferenceType?>(null);
 
-        TestCreateAndAccess<SomeRecordStruct>(new SomeRecordStruct("one", 1));
-        TestCreateAndAccess<SomeRecordStruct?>(new SomeRecordStruct("one", 1));
-        TestCreateAndAccess<SomeRecordStruct?>(null);
-    }
+        TestCreateAndAccess<WrapperStruct>(new WrapperStruct("one"));
+        TestCreateAndAccess<WrapperStruct?>(new WrapperStruct("one"));
+        TestCreateAndAccess<WrapperStruct?>(null);
 
-    private record SomeRecord(string a, int b);
-    private record struct SomeRecordStruct(string a, int b);
+        TestCreateAndAccess<SmallStructMixed>(new SmallStructMixed("one", 1), isBoxed: true);
+        TestCreateAndAccess<SmallStructMixed?>(new SmallStructMixed("one", 1), isBoxed: true);
+        TestCreateAndAccess<SmallStructMixed?>(null);
 
-    private enum I8Enum : sbyte { A = 1, B, C };
-    private enum I16Enum : short { A = 1, B, C };
-    private enum I32Enum : int { A = 1, B, C };
-    private enum I64Enum : long { A = 1, B, C };
-    private enum UI8Enum : byte { A = 1, B, C };
-    private enum UI16Enum : ushort { A = 1, B, C };
-    private enum UI32Enum : uint { A = 1, B, C };
-    private enum UI64Enum : ulong { A = 1, B, C };
+        TestCreateAndAccess<LargeStructMixed>(new LargeStructMixed("one", 1, "two", 2), isBoxed: true);
+        TestCreateAndAccess<LargeStructMixed?>(new LargeStructMixed("one", 1, "two", 2), isBoxed: true);
+        TestCreateAndAccess<LargeStructMixed?>(null);
 
-    [TestMethod]
-    public void TestEnums()
-    {
+        TestCreateAndAccess<SmallStructNoRefs>(new SmallStructNoRefs(1, 2));
+        TestCreateAndAccess<SmallStructNoRefs?>(new SmallStructNoRefs(1, 2));
+        TestCreateAndAccess<SmallStructNoRefs?>(null);
+
+        TestCreateAndAccess<LargeStructNoRefs>(new LargeStructNoRefs(1, 2, 3, 4), isBoxed: true);
+        TestCreateAndAccess<LargeStructNoRefs?>(new LargeStructNoRefs(1, 2, 3, 4), isBoxed: true);
+        TestCreateAndAccess<LargeStructNoRefs?>(null);
+
+        // enums
         TestCreateAndAccess(I8Enum.A);
         TestCreateAndAccess(I16Enum.A);
         TestCreateAndAccess(I32Enum.A);
@@ -182,59 +183,64 @@ public class VariantTests
         TestCreateAndAccess(UI64Enum.A);
     }
 
-    private void TestCreateAndAccess<T>(T value)
-    {
-        Console.WriteLine($"TestCreateAndAccess: {typeof(T).Name}: {value}");
+    private record ReferenceType(string a, int b);
+    private record struct SmallStructMixed(string a, int b);
+    private record struct WrapperStruct(string a);
+    private record struct SmallStructNoRefs(int a, int b);
+    private record struct LargeStructNoRefs(int a, int b, int c, int d);
+    private record struct LargeStructMixed(string a, int b, string c, int d);
 
-        Console.WriteLine("\tCreate");
+    private enum I8Enum : sbyte { A = 1, B, C };
+    private enum I16Enum : short { A = 1, B, C };
+    private enum I32Enum : int { A = 1, B, C };
+    private enum I64Enum : long { A = 1, B, C };
+    private enum UI8Enum : byte { A = 1, B, C };
+    private enum UI16Enum : ushort { A = 1, B, C };
+    private enum UI32Enum : uint { A = 1, B, C };
+    private enum UI64Enum : ulong { A = 1, B, C };
+
+    private void TestCreateAndAccess<T>(T value, bool isBoxed = false)
+    {
         var v = Variant.Create(value);
 
         if (value == null)
         {
-            Console.WriteLine("\tType");
-            Assert.IsNull(v.Type, "Type");
-            Console.WriteLine("\tIsNull (true)");
+            Assert.AreEqual(typeof(object), v.Type, "Type");
             Assert.IsTrue(v.IsNull, "IsNull");
-            Console.WriteLine("\tIsType");
+            Assert.AreEqual(isBoxed, v.IsBoxed, "IsBoxed");
             Assert.IsFalse(v.IsType<T>(), "IsType");
-            Console.WriteLine("\tTryGet");
             Assert.IsFalse(v.TryGet<T>(out _), "TryGet");
-            Console.WriteLine("\tGet");
             Assert.ThrowsException<InvalidCastException>(() => v.Get<T>());
-            Console.WriteLine("\tAsType");
             Assert.AreEqual(default, v.AsType<T>());
         }
         else
         {
             var nonNullT = GetNonNullableType(typeof(T));
-            Console.WriteLine("\tType");
             Assert.AreEqual(nonNullT, v.Type, "Type");
-            Console.WriteLine("IsNull (false)");
             Assert.IsFalse(v.IsNull, "IsNull");
-            Console.WriteLine("\tIsType");
+            Assert.AreEqual(isBoxed, v.IsBoxed, "IsBoxed");
             Assert.IsTrue(v.IsType<T>(), "IsType");
-            Console.WriteLine("\tTryGet");
             Assert.IsTrue(v.TryGet<T>(out var actualValue), "TryGet");
-            Assert.AreEqual(value, actualValue, "value");
-            Console.WriteLine("\tGet");
             Assert.AreEqual(value, v.Get<T>());
-            Console.WriteLine("\tAsType");
             Assert.AreEqual(value, v.AsType<T>());
         }
     }
 
-    private static Type GetNonNullableType(Type type)
-    {
-        if (type.IsValueType
-            && type.IsGenericType
-            && type.GetGenericTypeDefinition() is Type genericTypeDef
-            && genericTypeDef == typeof(Nullable<>))
-        {
-            return type.GetGenericArguments()[0];
-        }
+    /// <summary>
+    /// Returns true if the type is Nullable&lt;T&gt;
+    /// </summary>
+    private static bool IsNullableType(Type type) =>
+        type.IsGenericType 
+        && type.GetGenericTypeDefinition() == typeof(Nullable<>);
 
-        return type;
-    }
+    /// <summary>
+    /// If the type is Nullable&lt;T&gt;, returns the type T,
+    /// otherwise returns the type.
+    /// </summary>
+    private static Type GetNonNullableType(Type type) =>
+        IsNullableType(type)
+            ? type.GetGenericArguments()[0]
+            : type;
 
     [TestMethod]
     public void TestIsType()
@@ -259,9 +265,13 @@ public class VariantTests
         TestIsType<DateTime>(DateTime.Now);
         TestIsType<TimeSpan>(TimeSpan.FromMinutes(1));
         TestIsType<Guid>(Guid.NewGuid());
-        TestIsType<SomeRecordStruct>(new SomeRecordStruct("one", 1));
         TestIsType<string>("string");
-        TestIsType<SomeRecord>(new SomeRecord("one", 1));
+        TestIsType<ReferenceType>(new ReferenceType("one", 1));
+        TestIsType<WrapperStruct>(new WrapperStruct("one"));
+        TestIsType<SmallStructMixed>(new SmallStructMixed("one", 1));
+        TestIsType<SmallStructNoRefs>(new SmallStructNoRefs(1, 2));
+        TestIsType<LargeStructMixed>(new LargeStructMixed("one", 1, "two", 2));
+        TestIsType<LargeStructNoRefs>(new LargeStructNoRefs(1, 2, 3, 4));
 
         // nullabe T with non-null value
         TestIsType<sbyte?>(1);
@@ -283,15 +293,20 @@ public class VariantTests
         TestIsType<DateTime?>(DateTime.Now);
         TestIsType<TimeSpan?>(TimeSpan.FromMinutes(1));
         TestIsType<Guid?>(Guid.NewGuid());
-        TestIsType<SomeRecordStruct?>(new SomeRecordStruct("one", 1));
         TestIsType<string?>("string");
-        TestIsType<SomeRecord?>(new SomeRecord("one", 1));
+        TestIsType<ReferenceType?>(new ReferenceType("one", 1));
+        TestIsType<WrapperStruct?>(new WrapperStruct("one"));
+        TestIsType<SmallStructMixed?>(new SmallStructMixed("one", 1));
+        TestIsType<SmallStructNoRefs?>(new SmallStructNoRefs(1, 2));
+        TestIsType<LargeStructMixed?>(new LargeStructMixed("one", 1, "two", 2));
+        TestIsType<LargeStructNoRefs?>(new LargeStructNoRefs(1, 2, 3, 4));
     }
 
     private void TestIsType<T>(T value)
     {
         var v = Variant.Create(value);
         Assert.IsTrue(v.IsType<T>(), "IsType");
+        Assert.IsTrue(v.IsType<object>(), "IsType<object>");
     }
 
     [TestMethod]
@@ -316,10 +331,14 @@ public class VariantTests
         TestAsTypeNullStruct<DateTime>();
         TestAsTypeNullStruct<TimeSpan>();
         TestAsTypeNullStruct<Guid>();
-        TestAsTypeNullStruct<SomeRecordStruct>();
+        TestAsTypeNullStruct<WrapperStruct>();
+        TestAsTypeNullStruct<SmallStructMixed>();
+        TestAsTypeNullStruct<LargeStructMixed>();
+        TestAsTypeNullStruct<SmallStructNoRefs>();
+        TestAsTypeNullStruct<LargeStructNoRefs>();
 
         TestAsTypeNullRef<string>();
-        TestAsTypeNullRef<SomeRecord>();
+        TestAsTypeNullRef<ReferenceType>();
     }
 
     private void TestAsTypeNullStruct<T>()

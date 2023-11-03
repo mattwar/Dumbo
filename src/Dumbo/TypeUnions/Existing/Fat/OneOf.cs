@@ -114,6 +114,14 @@ public readonly struct OneOf<T1, T2> : ITypeUnion<OneOf<T1, T2>>
             _ => null!
         };
 
+    public Variant ToVariant() =>
+        _index switch
+        {
+            1 => Variant.Create(_value1),
+            2 => Variant.Create(_value2),
+            _ => Variant.Null
+        };
+
     // equality
     public bool Equals<T>(T? value)
     {
