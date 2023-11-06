@@ -1,6 +1,6 @@
 ﻿using System.Diagnostics.CodeAnalysis;
 
-namespace Dumbo.TaggedUnion.Shared;
+namespace Dumbo.TaggedUnions.Shared;
 
 public struct Result<TValue, TError>
 {

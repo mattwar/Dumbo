@@ -57,11 +57,31 @@ public readonly struct CatOrDog
         _vals = vals;
     }
 
+    private CatOrDog(string name, int sleepingSpots)
+    {
+        _kind = Kind.Cat;
+        _refs.cat.name = name;
+        _vals.cat.sleepingSpots = sleepingSpots;
+    }
+
+    private CatOrDog(string name, bool isTrained)
+    {
+        _kind = Kind.Cat;
+        _refs.dog.name = name;
+        _vals.dog.isTrained = isTrained;
+    }
+
+    //public static CatOrDog Cat(string name, int sleepingSpots) =>
+    //    new CatOrDog(Kind.Cat, new OverlappedRefs { cat = new CatRefs { name = name } }, new OverlappedVals { cat = new CatVals { sleepingSpots = sleepingSpots } });
+
+    //public static CatOrDog Dog(string name, bool isTrained) =>
+    //    new CatOrDog(Kind.Dog, new OverlappedRefs { dog = new DogRefs { name = name } }, new OverlappedVals { dog = new DogVals { isTrained = isTrained } });
+
     public static CatOrDog Cat(string name, int sleepingSpots) =>
-        new CatOrDog(Kind.Cat, new OverlappedRefs { cat = new CatRefs { name = name } }, new OverlappedVals { cat = new CatVals { sleepingSpots = sleepingSpots } });
+        new CatOrDog(name, sleepingSpots);
 
     public static CatOrDog Dog(string name, bool isTrained) =>
-        new CatOrDog(Kind.Dog, new OverlappedRefs { dog = new DogRefs { name = name } }, new OverlappedVals { dog = new DogVals { isTrained = isTrained } });
+        new CatOrDog(name, isTrained);
 
     public bool IsCat => _kind == Kind.Cat;
     public bool IsDog => _kind == Kind.Dog;

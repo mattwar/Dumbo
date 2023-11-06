@@ -1,4 +1,4 @@
-﻿namespace Dumbo.TaggedUnion.Hidden;
+﻿namespace Dumbo.TaggedUnions.Hidden;
 
 public abstract record Result<TValue, TError>()
 {

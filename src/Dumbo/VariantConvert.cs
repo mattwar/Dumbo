@@ -854,36 +854,27 @@ namespace Dumbo
 
         private abstract class TypeParser<T>
         {
-            private static readonly bool _isValidType;
+            private static readonly Type? _parserType;
             private static TypeParser<T>? _instance;
 
             static TypeParser()
             {
-                _isValidType = IsStringParsable() || IsSpanParsable();
+                if (typeof(T).IsAssignableTo(typeof(IParsable<>).MakeGenericType(typeof(T))))
+                {
+                    _parserType = typeof(StringParsableParser<>).MakeGenericType(typeof(T));
+                }
+                else if (typeof(T).IsAssignableTo(typeof(ISpanParsable<>).MakeGenericType(typeof(T))))
+                {
+                    _parserType = typeof(SpanParsableParser<>).MakeGenericType(typeof(T));
+                }
             }
-
-            private static bool IsStringParsable() =>
-                typeof(T).IsAssignableTo(typeof(IParsable<>).MakeGenericType(typeof(T)));
-
-            private static bool IsSpanParsable() =>
-                typeof(T).IsAssignableTo(typeof(ISpanParsable<>).MakeGenericType(typeof(T)));
 
             public static bool TryGetParser(out TypeParser<T>? parser)
             {
-                if (_instance == null && _isValidType)
+                if (_instance == null && _parserType != null)
                 {
-                    if (IsSpanParsable())
-                    {
-                        var converterType = typeof(SpanParsableParser<>).MakeGenericType(typeof(T));
-                        var newParser = (TypeParser<T>)Activator.CreateInstance(converterType)!;
-                        Interlocked.CompareExchange(ref _instance, newParser, null);
-                    }
-                    else if (IsStringParsable())
-                    {
-                        var converterType = typeof(StringParsableParser<>).MakeGenericType(typeof(T));
-                        var newParser = (TypeParser<T>)Activator.CreateInstance(converterType)!;
-                        Interlocked.CompareExchange(ref _instance, newParser, null);
-                    }
+                    var newParser = (TypeParser<T>)Activator.CreateInstance(_parserType)!;
+                    Interlocked.CompareExchange(ref _instance, newParser, null);
                 }
 
                 parser = _instance;

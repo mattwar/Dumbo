@@ -24,20 +24,22 @@ public interface ITypeUnion<TSelf> : ITypeUnion
 /// </summary>
 public abstract class TypeUnionFactory<TUnion>
 {
-    private static readonly bool _isValidUnionType;
+    private static readonly Type? _factoryType;
     private static TypeUnionFactory<TUnion>? _instance;
 
     static TypeUnionFactory()
     {
-        _isValidUnionType = typeof(TUnion).IsAssignableTo(typeof(ITypeUnion<>).MakeGenericType(typeof(TUnion)));
+        if (typeof(TUnion).IsAssignableTo(typeof(ITypeUnion<>).MakeGenericType(typeof(TUnion))))
+        {
+            _factoryType = typeof(TypeUnionFactoryImpl<>).MakeGenericType(typeof(TUnion));
+        }
     }
 
     public static bool TryGetFactory([NotNullWhen(true)] out TypeUnionFactory<TUnion> factory)
     {
-        if (_instance == null && _isValidUnionType)
+        if (_instance == null && _factoryType != null)
         {
-            var type = typeof(TypeUnionFactoryImpl<>).MakeGenericType(typeof(TUnion));
-            factory = (TypeUnionFactory<TUnion>)Activator.CreateInstance(type)!;
+            factory = (TypeUnionFactory<TUnion>)Activator.CreateInstance(_factoryType)!;
             Interlocked.CompareExchange(ref _instance, factory, null);
         }
 
@@ -46,17 +48,6 @@ public abstract class TypeUnionFactory<TUnion>
     }
 
     public abstract bool TryCreate<T>(T value, [NotNullWhen(true)] out TUnion union);
-
-    private class NotATypeUnion : TypeUnionFactory<TUnion>
-    {
-        public static readonly NotATypeUnion Instance = new NotATypeUnion();
-
-        public override bool TryCreate<T>(T value, [NotNullWhen(true)] out TUnion union)
-        {
-            union = default!;
-            return false;
-        }
-    }
 }
 
 internal class TypeUnionFactoryImpl<TUnion> : TypeUnionFactory<TUnion>
@@ -72,20 +63,22 @@ internal class TypeUnionFactoryImpl<TUnion> : TypeUnionFactory<TUnion>
 /// </summary>
 public abstract class TypeUnionAccessor<TUnion>
 {
-    private static readonly bool _isValidUnionType;
+    private static readonly Type? _accessorType;
     private static TypeUnionAccessor<TUnion>? _instance;
 
     static TypeUnionAccessor()
     {
-        _isValidUnionType = typeof(TUnion).IsAssignableTo(typeof(ITypeUnion));
+        if (typeof(TUnion).IsAssignableTo(typeof(ITypeUnion)))
+        {
+            _accessorType = typeof(TypeUnionAccessorImpl<>).MakeGenericType(typeof(TUnion));
+        }
     }
 
     public static bool TryGetAccessor([NotNullWhen(true)] out TypeUnionAccessor<TUnion> accessor)
     {
-        if (_instance == null && _isValidUnionType)
+        if (_instance == null && _accessorType != null)
         {
-            var type = typeof(TypeUnionAccessorImpl<>).MakeGenericType(typeof(TUnion));
-            accessor = (TypeUnionAccessor<TUnion>)Activator.CreateInstance(type)!;
+            accessor = (TypeUnionAccessor<TUnion>)Activator.CreateInstance(_accessorType)!;
             Interlocked.CompareExchange(ref _instance, accessor, null);
         }
 

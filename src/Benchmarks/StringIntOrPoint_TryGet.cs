@@ -68,113 +68,170 @@ public class StringIntOrPoint_TryGet
         F.StringIntOrPoint.Create(new Point(1, 1));
 
 
+    [Params(1000)]
+    public int Iterations { get; set; }
+
     [Benchmark]
     public void String_OneOf_Boxed()
     {
-        OneOf_Boxed_String.TryGet(out string value);
+        for (int i = 0; i < Iterations; i++)
+        {
+            OneOf_Boxed_String.TryGet(out string value);
+        }
     }
 
     [Benchmark]
     public void String_OneOf_Fat()
     {
-        OneOf_Fat_String.TryGet(out string value);
+        for (int i = 0; i < Iterations; i++)
+        {
+            OneOf_Fat_String.TryGet(out string value);
+        }
     }
 
     [Benchmark]
     public void String_OneOf_Hybrid()
     {
-        OneOf_Hybrid_String.TryGet(out string value);
+        for (int i = 0; i < Iterations; i++)
+        {
+            OneOf_Hybrid_String.TryGet(out string value);
+        }
     }
 
     [Benchmark]
     public void String_StringIntOrPoint_Fat()
     {
-        StringIntOrPoint_Fat_String.TryGet(out string value);
+        for (int i = 0; i < Iterations; i++)
+        {
+            StringIntOrPoint_Fat_String.TryGet(out string value);
+        }
     }
 
     [Benchmark]
     public void String_StringIntOrPoint_Boxed()
     {
-        StringIntOrPoint_Boxed_String.TryGet(out string value);
+        for (int i = 0; i < Iterations; i++)
+        {
+            StringIntOrPoint_Boxed_String.TryGet(out string value);
+        }
     }
 
     [Benchmark]
     public void String_StringIntOrPoint_Hybrid()
     {
-        StringIntOrPoint_Hybrid_String.TryGet(out string value);
+        for (int i = 0; i < Iterations; i++)
+        {
+            StringIntOrPoint_Hybrid_String.TryGet(out string value);
+        }
     }
 
 
     [Benchmark]
     public void Int_OneOf_Boxed()
     {
-        OneOf_Boxed_Int.TryGet(out int value);
+        for (int i = 0; i < Iterations; i++)
+        {
+            OneOf_Boxed_Int.TryGet(out int value);
+        }
     }
 
     [Benchmark]
     public void Int_OneOf_Fat()
     {
-        OneOf_Fat_Int.TryGet(out int value);
+        for (int i = 0; i < Iterations; i++)
+        {
+            OneOf_Fat_Int.TryGet(out int value);
+        }
     }
 
     [Benchmark]
     public void Int_OneOf_Hybrid()
     {
-        OneOf_Hybrid_Int.TryGet(out int value);
+        for (int i = 0; i < Iterations; i++)
+        {
+            OneOf_Hybrid_Int.TryGet(out int value);
+        }
     }
 
     [Benchmark]
     public void Int_StringIntOrPoint_Fat()
     {
-        StringIntOrPoint_Fat_Int.TryGet(out int value);
+        for (int i = 0; i < Iterations; i++)
+        {
+            StringIntOrPoint_Fat_Int.TryGet(out int value);
+        }
     }
 
     [Benchmark]
     public void Int_StringIntOrPoint_Boxed()
     {
-        StringIntOrPoint_Boxed_Int.TryGet(out int value);
+        for (int i = 0; i < Iterations; i++)
+        {
+            StringIntOrPoint_Boxed_Int.TryGet(out int value);
+        }
     }
 
     [Benchmark]
     public void Int_StringIntOrPoint_Hybrid()
     {
-        StringIntOrPoint_Hybrid_Int.TryGet(out int value);
+        for (int i = 0; i < Iterations; i++)
+        {
+            StringIntOrPoint_Hybrid_Int.TryGet(out int value);
+        }
     }
 
 
     [Benchmark]
     public void Point_OneOf_Boxed()
     {
-        OneOf_Boxed_Point.TryGet(out Point value);
+        for (int i = 0; i < Iterations; i++)
+        {
+            OneOf_Boxed_Point.TryGet(out Point value);
+        }
     }
 
     [Benchmark]
     public void Point_OneOf_Fat()
     {
-        OneOf_Fat_Point.TryGet(out Point value);
+        for (int i = 0; i < Iterations; i++)
+        {
+            OneOf_Fat_Point.TryGet(out Point value);
+        }
     }
 
     [Benchmark]
     public void Point_OneOf_Hybrid()
     {
-        OneOf_Hybrid_Point.TryGet(out Point value);
+        for (int i = 0; i < Iterations; i++)
+        {
+            OneOf_Hybrid_Point.TryGet(out Point value);
+        }
     }
 
     [Benchmark]
     public void Point_StringIntOrPoint_Fat()
     {
-        StringIntOrPoint_Fat_Point.TryGet(out Point value);
+        for (int i = 0; i < Iterations; i++)
+        {
+            StringIntOrPoint_Fat_Point.TryGet(out Point value);
+        }
     }
 
     [Benchmark]
     public void Point_StringIntOrPoint_Boxed()
     {
-        StringIntOrPoint_Boxed_Point.TryGet(out Point value);
+        for (int i = 0; i < Iterations; i++)
+        {
+            StringIntOrPoint_Boxed_Point.TryGet(out Point value);
+        }
     }
 
     [Benchmark]
     public void Point_StringIntOrPoint_Hybrid()
     {
-        StringIntOrPoint_Hybrid_Point.TryGet(out Point value);
+        for (int i = 0; i < Iterations; i++)
+        {
+            StringIntOrPoint_Hybrid_Point.TryGet(out Point value);
+        }
     }
 }

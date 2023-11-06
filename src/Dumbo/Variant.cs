@@ -251,7 +251,7 @@ public readonly struct Variant : ITypeUnion<Variant>, IEquatable<Variant>
                 if (default(TValue) == null)
                 {
                     // value is some Nullable<T>
-                    var elementType = typeof(TValue).GetGenericArguments()[0];
+                    var elementType = ttype.GetGenericArguments()[0];
                     var encoderType = typeof(NullableEncoder<>).MakeGenericType(elementType);
                     return (VariantEncoder<TValue>)Activator.CreateInstance(encoderType)!;
                 }

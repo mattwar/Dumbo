@@ -1,6 +1,6 @@
 ﻿using System.Diagnostics.CodeAnalysis;
 
-namespace Dumbo.TaggedUnion.Overlapped;
+namespace Dumbo.TaggedUnions.Overlapped;
 
 public struct Result<TValue, TError>
 {

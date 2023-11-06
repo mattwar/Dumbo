@@ -1,4 +1,4 @@
-﻿namespace Dumbo.TaggedUnion.Heirarchy;
+﻿namespace Dumbo.TaggedUnions.Heirarchy;
 
 public abstract record Result<TValue, TError>()
 {
