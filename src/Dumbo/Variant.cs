@@ -1,9 +1,9 @@
-﻿using System.Runtime.CompilerServices;
-
-using Reference = System.Object;
+﻿using Reference = System.Object;
 using Bits = System.UInt64;
 using System.Text;
+using System.Diagnostics;
 using System.Diagnostics.CodeAnalysis;
+using System.Runtime.CompilerServices;
 
 #pragma warning disable CS8500 // This takes the address of, gets the size of, or declares a pointer to a managed type
 
@@ -12,7 +12,7 @@ namespace Dumbo;
 /// <summary>
 /// A wrapper type with a small footprint that can hold any value and avoids boxing of small structs that do not contain references.
 /// </summary>
-public readonly struct Variant : ITypeUnion<Variant>
+public readonly struct Variant : ITypeUnion<Variant>, IEquatable<Variant>
 {
     private readonly Reference? _reference;
     private readonly Bits _bits;
@@ -107,7 +107,34 @@ public readonly struct Variant : ITypeUnion<Variant>
     public override string ToString() =>
         Encoding.GetString(in this);
 
-    // operators
+    /// <summary>
+    /// Returns true if the value held by the variant is equal to the specified value.
+    /// </summary>
+    public bool Equals<T>(T value) =>
+        Encoding.IsEqual(in this, value);
+
+    /// <summary>
+    /// Returns true if the value held by the variant is equal to the value held by the specified variant.
+    /// </summary>
+    public bool Equals(Variant variant) =>
+        Encoding.IsEqual(in this, in variant);
+
+    /// <summary>
+    /// Returns true if the value held by the variant is equal to the specified value.
+    /// </summary>
+    public override bool Equals([NotNullWhen(true)] object? value) =>
+        Encoding.IsEqual(in this, value);
+
+    /// <summary>
+    /// Returns the hash code of the value held by the variant.
+    /// </summary>
+    public override int GetHashCode() =>
+        Encoding.GetHashCode(in this);
+
+    #region Operators
+    public static bool operator ==(Variant a, Variant b) => a.Equals(b);
+    public static bool operator !=(Variant a, Variant b) => !a.Equals(b);
+
     public static implicit operator Variant(bool value) => Create(value);
     public static implicit operator Variant(sbyte value) => Create(value);
     public static implicit operator Variant(short value) => Create(value);
@@ -195,6 +222,7 @@ public readonly struct Variant : ITypeUnion<Variant>
     public static implicit operator DateTime?(Variant value) => value.IsNull ? default : (DateTime)value;
     public static implicit operator TimeSpan?(Variant value) => value.IsNull ? default : (TimeSpan)value;
     public static implicit operator Guid?(Variant value) => value.IsNull ? default : (Guid)value;
+    #endregion
 
     #region Encoders
     private abstract class VariantEncoder<TValue>
@@ -238,7 +266,7 @@ public readonly struct Variant : ITypeUnion<Variant>
                 else if (sizeof(TValue) <= sizeof(Bits))
                 {
                     // no references and small enough to fit in bits
-                    return new SmallValueEncoder<TValue>();
+                    return new BitsEncoder<TValue>();
                 }
                 else if (ttype == typeof(decimal))
                 {
@@ -251,7 +279,7 @@ public readonly struct Variant : ITypeUnion<Variant>
                     return (VariantEncoder<TValue>)(object)new VariantVariantEncoder();
                 }
                 
-                if (typeof(ITypeUnion).IsAssignableFrom(ttype))
+                if (ttype.IsAssignableTo(typeof(ITypeUnion)))
                 {
                     // struct that is a type union, use ITypeUnion interface to access value as a variant.
                     var encoderType = typeof(TypeUnionEncoder<>).MakeGenericType(ttype);
@@ -269,10 +297,21 @@ public readonly struct Variant : ITypeUnion<Variant>
         public abstract Variant Encode(TValue value);
     }
 
-    private sealed class SmallValueEncoder<TValue> : VariantEncoder<TValue>
+    /// <summary>
+    /// An <see cref="VariantEncoder"/> for values that can be stored in the bits field.
+    /// </summary>
+    private sealed class BitsEncoder<TValue> : VariantEncoder<TValue>
     {
         private readonly VariantEncoding _encoding = 
-            SmallValueEncoding<TValue>.Instance;
+            BitsEncoding<TValue>.Instance;
+
+        public unsafe BitsEncoder()
+        {
+            Debug.Assert(typeof(TValue).IsValueType);
+            Debug.Assert(default(TValue) != null);
+            Debug.Assert(!RuntimeHelpers.IsReferenceOrContainsReferences<TValue>());
+            Debug.Assert(sizeof(TValue) <= sizeof(Bits));
+        }
 
         public override Variant Encode(TValue value)
         {
@@ -281,18 +320,44 @@ public readonly struct Variant : ITypeUnion<Variant>
         }
     }
 
+    /// <summary>
+    /// An <see cref="VariantEncoder{TValue}"/> for types that are references or must be boxed.
+    /// </summary>
+    private sealed class ReferenceEncoder<TValue> : VariantEncoder<TValue>
+    {
+        public override Variant Encode(TValue value) =>
+            new Variant(value, default);
+    }
+
+    /// <summary>
+    /// An <see cref="VariantEncoder{TValue}"/> for types that are struct wrappers around
+    /// a single reference.
+    /// </summary>
     private sealed class WrapperStructEncoder<TValue> : VariantEncoder<TValue>
     {
         private readonly int _encodingId =
-            WrapperStructEncoding<TValue>.Instance.Id;
+            WrapperStructEncoding<TValue>.Instance.GetId();
+
+        public unsafe WrapperStructEncoder()
+        {
+            Debug.Assert(typeof(TValue).IsValueType);
+            Debug.Assert(default(TValue) != null);
+            Debug.Assert(RuntimeHelpers.IsReferenceOrContainsReferences<TValue>());
+            Debug.Assert(sizeof(TValue) == sizeof(Reference));
+        }
 
         public override Variant Encode(TValue value)
         {
+            // interior pointer from value is stored in the reference field.
+            // ID of encoding is stored in the bits field.
             var refValue = Unsafe.As<TValue, Reference>(ref value);
             return new Variant(refValue, (Bits)_encodingId);
         }
     }
 
+    /// <summary>
+    /// An <see cref="VariantEncoder{TValue}"/> for Nullable&lt;T&gt; values.
+    /// </summary>
     private sealed class NullableEncoder<TElement> : VariantEncoder<Nullable<TElement>>
         where TElement : struct
     {
@@ -300,23 +365,20 @@ public readonly struct Variant : ITypeUnion<Variant>
             VariantEncoder<TElement>.Instance;
 
         public override Variant Encode(TElement? value) =>
-            _encoder.Encode(value.GetValueOrDefault());
+            _encoder.Encode(value.GetValueOrDefault()); // null is already handled
     }
 
-    private sealed class ReferenceEncoder<TValue> : VariantEncoder<TValue>
-    {
-        public override Variant Encode(TValue value) =>
-            new Variant(value, default);
-    }
-
+    /// <summary>
+    /// A <see cref="VariantEncoder{TValue}"/> for decimal values
+    /// </summary>
     private sealed class DecimalEncoder : VariantEncoder<decimal>
     {
         public override Variant Encode(decimal value)
         {
             if (Decimal64.TryConvert(value, out var decVal))
             {
-                var encoded = SmallValueEncoder<Decimal64>.Instance.Encode(decVal);
-                return new Variant(DecimalEncoding.Instance, encoded._bits);
+                var bits = Unsafe.As<Decimal64, Bits>(ref decVal);
+                return new Variant(DecimalEncoding.Instance, bits);
             }
             else
             {
@@ -326,15 +388,26 @@ public readonly struct Variant : ITypeUnion<Variant>
         }
     }
 
+    /// <summary>
+    /// An encoder for variant values that just returns the value.
+    /// </summary>
     private sealed class VariantVariantEncoder : VariantEncoder<Variant>
     {
         public override Variant Encode(Variant variant) =>
             variant;
     }
 
+    /// <summary>
+    /// An encoder for type unions that access the unions value as a variant.
+    /// </summary>
     private sealed class TypeUnionEncoder<TUnion> : VariantEncoder<TUnion>
         where TUnion : ITypeUnion
     {
+        public TypeUnionEncoder()
+        {
+            Debug.Assert(typeof(TUnion).IsAssignableTo(typeof(ITypeUnion)));
+        }
+
         public override Variant Encode(TUnion value) =>
             value.ToVariant();
     }
@@ -351,6 +424,9 @@ public readonly struct Variant : ITypeUnion<Variant>
         public abstract bool IsType<T>(in Variant variant);
         public abstract bool TryGet<T>(in Variant variant, out T value);
         public abstract string GetString(in Variant variant);
+        public abstract bool IsEqual<T>(in Variant variant, T value);
+        public abstract bool IsEqual(in Variant variant, in Variant other);
+        public abstract int GetHashCode(in Variant variant);
 
         /// <summary>
         /// Return the <see cref="VariantEncoding"/> used by the <see cref="Variant"/>,
@@ -376,25 +452,6 @@ public readonly struct Variant : ITypeUnion<Variant>
 
         protected static List<VariantEncoding> s_encodingList =
             new List<VariantEncoding>(capacity: 1024) { null! };
-
-        private int _id = 0;
-
-        public int Id
-        {
-            get
-            {
-                if (_id == 0)
-                {
-                    lock (s_encodingList)
-                    {
-                        _id = s_encodingList.Count;
-                        s_encodingList.Add(this);
-                    }
-                }
-
-                return _id;
-            }
-        }
     }
 
     /// <summary>
@@ -404,7 +461,7 @@ public readonly struct Variant : ITypeUnion<Variant>
     {
         public abstract TValue Decode(in Variant variant);
 
-        public override Type GetType(in Variant varianit) => 
+        public override Type GetType(in Variant variant) => 
             typeof(TValue);
 
         public override bool IsType<TOther>(in Variant variant) =>
@@ -412,10 +469,15 @@ public readonly struct Variant : ITypeUnion<Variant>
 
         public override bool TryGet<TOther>(in Variant variant, out TOther value)
         {
-            if (Decode(in variant) is TOther other)
+            var decoded = Decode(in variant);
+            if (decoded is TOther other)
             {
                 value = other;
                 return true;
+            }
+            else if (TypeUnionFactory<TOther>.TryGetFactory(out var factory))
+            {
+                return factory.TryCreate(decoded, out value);
             }
 
             value = default!;
@@ -423,59 +485,44 @@ public readonly struct Variant : ITypeUnion<Variant>
         }
 
         public override string GetString(in Variant variant) =>
-            TryGet<TValue>(in variant, out var value) ? value?.ToString() ?? "" : "";
+            Decode(in variant)?.ToString() ?? "";
+
+        public override bool IsEqual<T>(in Variant variant, T value)
+        {
+            if (Decode(in variant) is T tvalue)
+            {
+                return EqualityComparer<T>.Default.Equals(tvalue, value);
+            }
+            else if (value is Variant v)
+            {
+                return IsEqual(in variant, in v);
+            }
+
+            return false;
+        }
+
+        public override bool IsEqual(in Variant variant, in Variant other) =>
+            other.Equals(Decode(in variant));
+
+        public override int GetHashCode(in Variant variant) =>
+            Decode(in variant)?.GetHashCode() ?? 0;
     }
 
     /// <summary>
-    /// Encoding for a small value or overlappable struct that fits within the bits.
+    /// Encoding for type that are encoded in the bits field.
     /// </summary>
-    private sealed class SmallValueEncoding<TValue> : VariantEncoding<TValue>
+    private sealed class BitsEncoding<TValue> : VariantEncoding<TValue>
     {
-        public static SmallValueEncoding<TValue> Instance =
-            new SmallValueEncoding<TValue>();
+        public static BitsEncoding<TValue> Instance =
+            new BitsEncoding<TValue>();
 
-        private SmallValueEncoding() { }
+        private BitsEncoding() { }
 
         public override TValue Decode(in Variant variant)
         {
             Bits bits = variant._bits;
             return Unsafe.As<Bits, TValue>(ref bits);
         }
-    }
-
-    /// <summary>
-    /// Encoding for a struct wrapper around a single reference.
-    /// </summary>
-    private sealed class WrapperStructEncoding<TValue> : VariantEncoding<TValue>
-    {
-        public static WrapperStructEncoding<TValue> Instance =
-            new WrapperStructEncoding<TValue>();
-
-        private WrapperStructEncoding() { }
-
-        public override TValue Decode(in Variant variant)
-        {
-            // wrapped reference is stored in _reference
-            Reference? refValue = variant._reference;
-            return Unsafe.As<Reference, TValue>(ref refValue!);
-        }
-    }
-
-    /// <summary>
-    /// An encoding for a decimal value stored as a Decimal64 value.
-    /// </summary>
-    private sealed class DecimalEncoding : VariantEncoding<decimal>
-    {
-        private static readonly VariantEncoding<Decimal64> _encoding =
-            SmallValueEncoding<Decimal64>.Instance;
-
-        public static readonly DecimalEncoding Instance = 
-            new DecimalEncoding();
-
-        private DecimalEncoding() { }
-
-        public override decimal Decode(in Variant variant) =>
-            _encoding.Decode(in variant).ToDecimal();
     }
 
     /// <summary>
@@ -504,13 +551,86 @@ public readonly struct Variant : ITypeUnion<Variant>
                 value = other;
                 return true;
             }
+            else if (TypeUnionFactory<T>.TryGetFactory(out var factory))
+            {
+                return factory.TryCreate(variant._reference, out value);
+
+            }
             value = default!;
             return false;
         }
 
         public override string GetString(in Variant variant) =>
             variant._reference?.ToString() ?? "";
+
+        public override bool IsEqual<T>(in Variant variant, T value)
+        {
+            if (value is Variant v)
+            {
+                return IsEqual(in variant, in v);
+            }
+            else
+            {
+                return object.Equals(variant._reference, value);
+            }
+        }
+
+        public override bool IsEqual(in Variant variant, in Variant other) =>
+            other.Equals(variant._reference);
+
+        public override int GetHashCode(in Variant variant) =>
+            variant._reference?.GetHashCode() ?? 0;
     }
 
+    /// <summary>
+    /// Encoding for a struct wrapper around a single reference.
+    /// </summary>
+    private sealed class WrapperStructEncoding<TValue> : VariantEncoding<TValue>
+    {
+        public static WrapperStructEncoding<TValue> Instance =
+            new WrapperStructEncoding<TValue>();
+
+        private WrapperStructEncoding() { }
+
+        private int _id = 0;
+
+        public int GetId()
+        {
+            if (_id == 0)
+            {
+                lock (s_encodingList)
+                {
+                    _id = s_encodingList.Count;
+                    s_encodingList.Add(this);
+                }
+            }
+
+            return _id;
+        }
+
+        public override TValue Decode(in Variant variant)
+        {
+            Reference? refValue = variant._reference;
+            return Unsafe.As<Reference, TValue>(ref refValue!);
+        }
+    }
+
+    /// <summary>
+    /// An encoding for a decimal values stored as a Decimal64 value.
+    /// </summary>
+    private sealed class DecimalEncoding : VariantEncoding<decimal>
+    {
+        public static readonly DecimalEncoding Instance = 
+            new DecimalEncoding();
+
+        private DecimalEncoding() { }
+
+        public override decimal Decode(in Variant variant)
+        {
+            Bits bits = variant._bits;
+            return Unsafe.As<Bits, Decimal64>(ref bits).ToDecimal();
+
+        }
+    }
     #endregion
 }

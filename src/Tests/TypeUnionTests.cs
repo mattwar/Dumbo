@@ -47,9 +47,9 @@ public class TypeUnionTests
         /// </summary>
         public UnionTester<TUnion> Value<TValue>(TValue expected)
         {
-            var oneOf1 = TUnion.Create(expected);
-            Assert.IsTrue(oneOf1.IsType<TValue>());
-            Assert.IsTrue(oneOf1.TryGet<TValue>(out var actual1));
+            Assert.IsTrue(TUnion.TryCreate(expected, out var oneOf1), "TryCreate");
+            Assert.IsTrue(oneOf1.IsType<TValue>(), "IsType");
+            Assert.IsTrue(oneOf1.TryGet<TValue>(out var actual1), "TryGet");
             Assert.AreEqual(expected, actual1);
             return this;
         }

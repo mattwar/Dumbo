@@ -41,17 +41,21 @@ public readonly struct OneOf<T1, T2> : ITypeUnion<OneOf<T1, T2>>
             case T2 t2:
                 converted = Create(t2);
                 return true;
-            case ITypeUnion union:
-                if (union.TryGet<T1>(out var u1))
-                    return TryCreate(u1, out converted);
-                else if (union.TryGet<T2>(out var u2))
-                    return TryCreate(u2, out converted);
+            default:
+                if (TypeUnionAccessor<T>.TryGetAccessor(out var accessor))
+                {
+                    if (accessor.TryGet<T1>(in value, out var t1val))
+                    {
+                        converted = Create(t1val);
+                        return true;
+                    }
+                    else if (accessor.TryGet<T2>(in value, out var t2val))
+                    {
+                        converted = Create(t2val);
+                        return true;
+                    }
+                }
                 break;
-#if ALLOW_NULL
-            case null:
-                converted = default;
-                return true;
-#endif
         }
 
         converted = default;
@@ -93,9 +97,21 @@ public readonly struct OneOf<T1, T2> : ITypeUnion<OneOf<T1, T2>>
                 value = t2;
                 return true;
             default:
-                value = default!;
-                return false;
+                if (TypeUnionFactory<T>.TryGetFactory(out var factory))
+                {
+                    switch (_index)
+                    {
+                        case 1:
+                            return factory.TryCreate(_value1, out value);
+                        case 2:
+                            return factory.TryCreate(_value2, out value);
+                    }
+                }
+                break;
         }
+
+        value = default!;
+        return false;
     }
 
     public Type? Type =>
@@ -218,19 +234,26 @@ public readonly struct OneOf<T1, T2, T3> : ITypeUnion<OneOf<T1, T2, T3>>
             case T3 t3:
                 converted = Create(t3);
                 return true;
-            case ITypeUnion union:
-                if (union.TryGet<T1>(out var u1))
-                    return TryCreate(u1, out converted);
-                else if (union.TryGet<T2>(out var u2))
-                    return TryCreate(u2, out converted);
-                else if (union.TryGet<T3>(out var u3))
-                    return TryCreate(u3, out converted);
+            default:
+                if (TypeUnionAccessor<T>.TryGetAccessor(out var accessor))
+                {
+                    if (accessor.TryGet<T1>(in value, out var t1val))
+                    {
+                        converted = Create(t1val);
+                        return true;
+                    }
+                    else if (accessor.TryGet<T2>(in value, out var t2val))
+                    {
+                        converted = Create(t2val);
+                        return true;
+                    }
+                    else if (accessor.TryGet<T3>(in value, out var t3val))
+                    {
+                        converted = Create(t3val);
+                        return true;
+                    }
+                }
                 break;
-#if ALLOW_NULL
-            case null:
-                converted = default;
-                return true;
-#endif
         }
 
         converted = default;
@@ -287,9 +310,23 @@ public readonly struct OneOf<T1, T2, T3> : ITypeUnion<OneOf<T1, T2, T3>>
                 value = t3;
                 return true;
             default:
-                value = default!;
-                return false;
+                if (TypeUnionFactory<T>.TryGetFactory(out var factory))
+                {
+                    switch (_index)
+                    {
+                        case 1:
+                            return factory.TryCreate(_value1, out value);
+                        case 2:
+                            return factory.TryCreate(_value2, out value);
+                        case 3:
+                            return factory.TryCreate(_value3, out value);
+                    }
+                }
+                break;
         }
+
+        value = default!;
+        return false;
     }
 
     public override string ToString() =>

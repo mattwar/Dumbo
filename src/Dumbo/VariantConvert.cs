@@ -192,9 +192,9 @@ namespace Dumbo
                         return true;
                     }
                     else if (variant.Type == typeof(string)
-                        && StringConverter.TryGetConverter<T>(out var converter))
+                        && TypeParser<T>.TryGetParser(out var parser))
                     {
-                        return converter.TryParse(variant.ToString(), out value);
+                        return parser.TryParse(variant.ToString(), out value);
                     }
                     break;
             }
@@ -852,63 +852,55 @@ namespace Dumbo
                 Enum.TryParse<TEnum>(text, ignoreCase: true, out value);
         }
 
-        private abstract class StringConverter
+        private abstract class TypeParser<T>
         {
-            public static bool TryGetConverter(Type type, out StringConverter converter)
+            private static readonly bool _isValidType;
+            private static TypeParser<T>? _instance;
+
+            static TypeParser()
             {
-                if (!s_converterMap.TryGetValue(type, out converter!))
+                _isValidType = IsStringParsable() || IsSpanParsable();
+            }
+
+            private static bool IsStringParsable() =>
+                typeof(T).IsAssignableTo(typeof(IParsable<>).MakeGenericType(typeof(T)));
+
+            private static bool IsSpanParsable() =>
+                typeof(T).IsAssignableTo(typeof(ISpanParsable<>).MakeGenericType(typeof(T)));
+
+            public static bool TryGetParser(out TypeParser<T>? parser)
+            {
+                if (_instance == null && _isValidType)
                 {
-                    if (type.IsAssignableTo(typeof(ISpanParsable<>).MakeGenericType(type)))
+                    if (IsSpanParsable())
                     {
-                        var converterType = typeof(SpanParsableConverter<>).MakeGenericType(type);
-                        var newConverter = (StringConverter)Activator.CreateInstance(converterType)!;
-                        converter = ImmutableInterlocked.GetOrAdd(ref s_converterMap, type, newConverter);
+                        var converterType = typeof(SpanParsableParser<>).MakeGenericType(typeof(T));
+                        var newParser = (TypeParser<T>)Activator.CreateInstance(converterType)!;
+                        Interlocked.CompareExchange(ref _instance, newParser, null);
                     }
-                    else if (type.IsAssignableTo(typeof(IParsable<>).MakeGenericType(type)))
+                    else if (IsStringParsable())
                     {
-                        var converterType = typeof(StringParsableConverter<>).MakeGenericType(type);
-                        var newConverter = (StringConverter)Activator.CreateInstance(converterType)!;
-                        converter = ImmutableInterlocked.GetOrAdd(ref s_converterMap, type, newConverter);
-                    }
-                    else
-                    {
-                        // put in null, so we don't repeat work again
-                        converter = ImmutableInterlocked.GetOrAdd(ref s_converterMap, type, (StringConverter)null!);
+                        var converterType = typeof(StringParsableParser<>).MakeGenericType(typeof(T));
+                        var newParser = (TypeParser<T>)Activator.CreateInstance(converterType)!;
+                        Interlocked.CompareExchange(ref _instance, newParser, null);
                     }
                 }
 
-                return converter != null;
+                parser = _instance;
+                return parser is not null;
             }
 
-            public static bool TryGetConverter<T>(out StringConverter<T> converter)
-            {
-                if (TryGetConverter(typeof(T), out var untypedConverter))
-                {
-                    converter = (untypedConverter as StringConverter<T>)!;
-                    return converter != null;
-                }
-
-                converter = default!;
-                return false;
-            }
-
-            private static ImmutableDictionary<Type, StringConverter> s_converterMap
-                = ImmutableDictionary<Type, StringConverter>.Empty;
-        }
-
-        private abstract class StringConverter<T> : StringConverter
-        {
             public abstract bool TryParse(string text, out T value);
         }
 
-        private sealed class StringParsableConverter<T> : StringConverter<T>
+        private sealed class StringParsableParser<T> : TypeParser<T>
             where T : IParsable<T>
         {
             public override bool TryParse(string text, out T value) =>
                 T.TryParse(text, null, out value!);
         }
 
-        private sealed class SpanParsableConverter<T> : StringConverter<T>
+        private sealed class SpanParsableParser<T> : TypeParser<T>
             where T : ISpanParsable<T>
         {
             public override bool TryParse(string text, out T value) =>
