@@ -869,7 +869,7 @@ namespace Dumbo
                 }
             }
 
-            public static bool TryGetParser(out TypeParser<T>? parser)
+            public static bool TryGetParser([NotNullWhen(true)] out TypeParser<T>? parser)
             {
                 if (_instance == null && _parserType != null)
                 {

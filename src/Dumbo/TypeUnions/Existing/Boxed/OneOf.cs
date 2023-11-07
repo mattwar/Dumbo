@@ -16,12 +16,79 @@ public readonly struct OneOf<T1, T2> : ITypeUnion<OneOf<T1, T2>>
         _value = value;
     }
 
+    #region Non-Generic API
     public static OneOf<T1, T2> Create(T1 value) =>
         new OneOf<T1, T2>(value!);
 
     public static OneOf<T1, T2> Create(T2 value) =>
         new OneOf<T1, T2>(value!);
 
+    public Type? Type => _value?.GetType();
+
+    public bool IsType1 => _value is T1;
+    public bool IsType2 => _value is T2;
+
+    public bool TryGetType1([NotNullWhen(true)] out T1 value)
+    {
+        if (_value is T1 value1)
+        {
+            value = value1;
+            return true;
+        }
+
+        value = default!;
+        return false;
+    }
+
+    public bool TryGetType2([NotNullWhen(true)] out T2 value)
+    {
+        if (_value is T2 value2)
+        {
+            value = value2;
+            return true;
+        }
+
+        value = default!;
+        return false;
+    }
+
+    public T1 GetType1() =>
+        TryGetType1(out var value)
+            ? value
+            : throw new InvalidCastException();
+
+    public T2 GetType2() =>
+        TryGetType2(out var value)
+            ? value
+            : throw new InvalidCastException();
+
+    public T1 AsType1() =>
+        TryGetType1(out var value)
+            ? value
+            : default!;
+
+    public T2 AsType2() =>
+        TryGetType2(out var value)
+            ? value
+            : default!;
+
+    public override string ToString() => _value?.ToString()!;
+
+    public Variant ToVariant() => Variant.Create(_value);
+
+    public bool Equals(T1 value) =>
+        TryGetType1(out var value1) && EqualityComparer<T1>.Default.Equals(value1, value);
+
+    public bool Equals(T2 value) =>
+        TryGetType2(out var value2) && EqualityComparer<T2>.Default.Equals(value2, value);
+
+    public override bool Equals([NotNullWhen(true)] object? other) =>
+        Equals(other);
+
+    public override int GetHashCode() => _value?.GetHashCode() ?? 0;
+    #endregion
+
+    #region Generic API
     public static OneOf<T1, T2> Create<T>(T value) =>
         TryCreate(value, out var converted)
             ? converted
@@ -80,13 +147,6 @@ public readonly struct OneOf<T1, T2> : ITypeUnion<OneOf<T1, T2>>
         return false;
     }
 
-    public Type? Type => _value?.GetType();
-
-    public override string ToString() => _value?.ToString()!;
-
-    public Variant ToVariant() => Variant.Create(_value);
-
-    // equality
     public bool Equals<T>(T? other)
     {
         if (_value is T tval)
@@ -102,28 +162,14 @@ public readonly struct OneOf<T1, T2> : ITypeUnion<OneOf<T1, T2>>
             return Equals(_value, other);
         }
     }
-
-    public override bool Equals([NotNullWhen(true)] object? other) =>
-        Equals(other);
-
-    public override int GetHashCode() => _value?.GetHashCode() ?? 0;
+    #endregion
 
     // operators
     public static implicit operator OneOf<T1, T2>(T1 value) => Create(value);
     public static implicit operator OneOf<T1, T2>(T2 value) => Create(value);
-    public static implicit operator OneOf<T1, T2>(OneOf<T2, T1> value) => Create(value);
 
-    public static explicit operator T1(OneOf<T1, T2> value) => value.Get<T1>();
-    public static explicit operator T2(OneOf<T1, T2> value) => value.Get<T2>();
-
-    public static bool operator ==(OneOf<T1, T2> value, T1 other) => value.TryGet<T1>(out var tval) && tval.Equals(other);
-    public static bool operator !=(OneOf<T1, T2> value, T1 other) => !value.TryGet<T1>(out var tval) || !tval.Equals(other);
-    public static bool operator ==(T1 other, OneOf<T1, T2> value) => value.TryGet<T1>(out var tval) && tval.Equals(other);
-    public static bool operator !=(T1 other, OneOf<T1, T2> value) => !value.TryGet<T1>(out var tval) || !tval.Equals(other);
-    public static bool operator ==(OneOf<T1, T2> value, T2 other) => value.TryGet<T2>(out var tval) && tval.Equals(other);
-    public static bool operator !=(OneOf<T1, T2> value, T2 other) => !value.TryGet<T2>(out var tval) || !tval.Equals(other);
-    public static bool operator ==(T2 other, OneOf<T1, T2> value) => value.TryGet<T2>(out var tval) && tval.Equals(other);
-    public static bool operator !=(T2 other, OneOf<T1, T2> value) => !value.TryGet<T2>(out var tval) || !tval.Equals(other);
+    public static explicit operator T1(OneOf<T1, T2> value) => value.GetType1();
+    public static explicit operator T2(OneOf<T1, T2> value) => value.GetType2();
 }
 
 [DebuggerDisplay("{DebugText}")]
@@ -138,6 +184,7 @@ public readonly struct OneOf<T1, T2, T3> : ITypeUnion<OneOf<T1, T2, T3>>
         _value = value;
     }
 
+    #region Non-Generic API
     public static OneOf<T1, T2, T3> Create(T1 value) =>
         new OneOf<T1, T2, T3>(value!);
 
@@ -147,6 +194,99 @@ public readonly struct OneOf<T1, T2, T3> : ITypeUnion<OneOf<T1, T2, T3>>
     public static OneOf<T1, T2, T3> Create(T3 value) =>
         new OneOf<T1, T2, T3>(value!);
 
+    public Type? Type => _value?.GetType();
+
+    public bool IsType1 => _value is T1;
+    public bool IsType2 => _value is T2;
+    public bool IsType3 => _value is T3;
+
+    public bool TryGetType1([NotNullWhen(true)] out T1 value)
+    {
+        if (_value is T1 val)
+        {
+            value = val;
+            return true;
+        }
+
+        value = default!;
+        return false;
+    }
+
+    public bool TryGetType2([NotNullWhen(true)] out T2 value)
+    {
+        if (_value is T2 val)
+        {
+            value = val;
+            return true;
+        }
+
+        value = default!;
+        return false;
+    }
+
+    public bool TryGetType3([NotNullWhen(true)] out T3 value)
+    {
+        if (_value is T3 val)
+        {
+            value = val;
+            return true;
+        }
+
+        value = default!;
+        return false;
+    }
+
+    public T1 GetType1() =>
+        TryGetType1(out var value)
+            ? value
+            : throw new InvalidCastException();
+
+    public T2 GetType2() =>
+        TryGetType2(out var value)
+            ? value
+            : throw new InvalidCastException();
+
+    public T3 GetType3() =>
+        TryGetType3(out var value)
+            ? value
+            : throw new InvalidCastException();
+
+    public T1 AsType1() =>
+        TryGetType1(out var value)
+            ? value
+            : default!;
+
+    public T2 AsType2() =>
+        TryGetType2(out var value)
+            ? value
+            : default!;
+
+    public T3 AsType3() =>
+        TryGetType3(out var value)
+            ? value
+            : default!;
+
+    public override string ToString() => _value?.ToString()!;
+
+    public Variant ToVariant() => Variant.Create(_value);
+
+    public bool Equals(T1 value) =>
+            TryGetType1(out var value1) && EqualityComparer<T1>.Default.Equals(value1, value);
+
+    public bool Equals(T2 value) =>
+        TryGetType2(out var value2) && EqualityComparer<T2>.Default.Equals(value2, value);
+
+    public bool Equals(T3 value) =>
+        TryGetType3(out var value2) && EqualityComparer<T3>.Default.Equals(value2, value);
+
+    public override bool Equals([NotNullWhen(true)] object? value) =>
+        Equals(value);
+
+    public override int GetHashCode() => _value?.GetHashCode() ?? 0;
+
+    #endregion
+
+    #region Generic API
     public static OneOf<T1, T2, T3> Create<T>(T other) =>
         TryCreate(other, out var converted)
             ? converted
@@ -213,10 +353,6 @@ public readonly struct OneOf<T1, T2, T3> : ITypeUnion<OneOf<T1, T2, T3>>
         return false;
     }
 
-    public Type? Type => _value?.GetType();
-
-    public override string ToString() => _value?.ToString()!;
-
     // equality
     public bool Equals<T>(T? other)
     {
@@ -233,44 +369,14 @@ public readonly struct OneOf<T1, T2, T3> : ITypeUnion<OneOf<T1, T2, T3>>
             return Equals(_value, other);
         }
     }
-
-    public override bool Equals([NotNullWhen(true)] object? other) =>
-        Equals(other);
-
-    public override int GetHashCode() => _value?.GetHashCode() ?? 0;
+    #endregion
 
     // operators
     public static implicit operator OneOf<T1, T2, T3>(T1 value) => Create(value);
     public static implicit operator OneOf<T1, T2, T3>(T2 value) => Create(value);
     public static implicit operator OneOf<T1, T2, T3>(T3 value) => Create(value);
 
-    public static implicit operator OneOf<T1, T2, T3>(OneOf<T1, T2> value) => Create(value);
-    public static implicit operator OneOf<T1, T2, T3>(OneOf<T2, T1> value) => Create(value);
-    public static implicit operator OneOf<T1, T2, T3>(OneOf<T1, T3> value) => Create(value);
-    public static implicit operator OneOf<T1, T2, T3>(OneOf<T3, T1> value) => Create(value);
-    public static implicit operator OneOf<T1, T2, T3>(OneOf<T2, T3> value) => Create(value);
-    public static implicit operator OneOf<T1, T2, T3>(OneOf<T3, T2> value) => Create(value);
-
-    public static implicit operator OneOf<T1, T2, T3>(OneOf<T1, T3, T2> value) => Create(value);
-    public static implicit operator OneOf<T1, T2, T3>(OneOf<T2, T1, T3> value) => Create(value);
-    public static implicit operator OneOf<T1, T2, T3>(OneOf<T2, T3, T1> value) => Create(value);
-    public static implicit operator OneOf<T1, T2, T3>(OneOf<T3, T1, T2> value) => Create(value);
-    public static implicit operator OneOf<T1, T2, T3>(OneOf<T3, T2, T1> value) => Create(value);
-
-    public static explicit operator T1(OneOf<T1, T2, T3> value) => value.Get<T1>();
-    public static explicit operator T2(OneOf<T1, T2, T3> value) => value.Get<T2>();
-    public static explicit operator T3(OneOf<T1, T2, T3> value) => value.Get<T3>();
-
-    public static bool operator ==(OneOf<T1, T2, T3> value, T1 other) => value.TryGet<T1>(out var tval) && tval.Equals(other);
-    public static bool operator !=(OneOf<T1, T2, T3> value, T1 other) => !value.TryGet<T1>(out var tval) || !tval.Equals(other);
-    public static bool operator ==(T1 other, OneOf<T1, T2, T3> value) => value.TryGet<T1>(out var tval) && tval.Equals(other);
-    public static bool operator !=(T1 other, OneOf<T1, T2, T3> value) => !value.TryGet<T1>(out var tval) || !tval.Equals(other);
-    public static bool operator ==(OneOf<T1, T2, T3> value, T2 other) => value.TryGet<T2>(out var tval) && tval.Equals(other);
-    public static bool operator !=(OneOf<T1, T2, T3> value, T2 other) => !value.TryGet<T2>(out var tval) || !tval.Equals(other);
-    public static bool operator ==(T2 other, OneOf<T1, T2, T3> value) => value.TryGet<T2>(out var tval) && tval.Equals(other);
-    public static bool operator !=(T2 other, OneOf<T1, T2, T3> value) => !value.TryGet<T2>(out var tval) || !tval.Equals(other);
-    public static bool operator ==(OneOf<T1, T2, T3> value, T3 other) => value.TryGet<T3>(out var tval) && tval.Equals(other);
-    public static bool operator !=(OneOf<T1, T2, T3> value, T3 other) => !value.TryGet<T3>(out var tval) || !tval.Equals(other);
-    public static bool operator ==(T3 other, OneOf<T1, T2, T3> value) => value.TryGet<T3>(out var tval) && tval.Equals(other);
-    public static bool operator !=(T3 other, OneOf<T1, T2, T3> value) => !value.TryGet<T3>(out var tval) || !tval.Equals(other);
+    public static explicit operator T1(OneOf<T1, T2, T3> value) => value.GetType1();
+    public static explicit operator T2(OneOf<T1, T2, T3> value) => value.GetType2();
+    public static explicit operator T3(OneOf<T1, T2, T3> value) => value.GetType3();
 }

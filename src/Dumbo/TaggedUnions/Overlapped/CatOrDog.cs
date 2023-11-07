@@ -1,4 +1,6 @@
-﻿using System.Runtime.InteropServices;
+﻿#define TAG_TYPED
+using System.Runtime.InteropServices;
+using System.Xml.Linq;
 
 namespace Dumbo.TaggedUnions.Overlapped;
 
@@ -50,13 +52,36 @@ public readonly struct CatOrDog
     private readonly OverlappedRefs _refs;
     private readonly OverlappedVals _vals;
 
-    private CatOrDog(Kind kind, OverlappedRefs refs, OverlappedVals vals)
+#if TAG_TYPED
+    public record struct CatData(string Name, int SleepingSpots);
+    public record struct DogData(string Name, bool IsTrained);
+
+    public CatOrDog(in CatData cat)
     {
-        _kind = kind;
-        _refs = refs;
-        _vals = vals;
+        _kind = Kind.Cat;
+        _refs.cat.name = cat.Name;
+        _vals.cat.sleepingSpots = cat.SleepingSpots;
     }
 
+    public CatOrDog(in DogData dog)
+    {
+        _kind = Kind.Dog;
+        _refs.dog.name = dog.Name;
+        _vals.dog.isTrained = dog.IsTrained;
+    }
+
+    public static CatOrDog Cat(string name, int sleepingSpots)
+    {
+        var cat = new CatData(name, sleepingSpots);
+        return new CatOrDog(in cat);
+    }
+
+    public static CatOrDog Dog(string name, bool isTrained)
+    {
+        var dog = new DogData(name, isTrained);
+        return new CatOrDog(in dog);
+    }
+#else
     private CatOrDog(string name, int sleepingSpots)
     {
         _kind = Kind.Cat;
@@ -66,22 +91,17 @@ public readonly struct CatOrDog
 
     private CatOrDog(string name, bool isTrained)
     {
-        _kind = Kind.Cat;
+        _kind = Kind.Dog;
         _refs.dog.name = name;
         _vals.dog.isTrained = isTrained;
     }
-
-    //public static CatOrDog Cat(string name, int sleepingSpots) =>
-    //    new CatOrDog(Kind.Cat, new OverlappedRefs { cat = new CatRefs { name = name } }, new OverlappedVals { cat = new CatVals { sleepingSpots = sleepingSpots } });
-
-    //public static CatOrDog Dog(string name, bool isTrained) =>
-    //    new CatOrDog(Kind.Dog, new OverlappedRefs { dog = new DogRefs { name = name } }, new OverlappedVals { dog = new DogVals { isTrained = isTrained } });
 
     public static CatOrDog Cat(string name, int sleepingSpots) =>
         new CatOrDog(name, sleepingSpots);
 
     public static CatOrDog Dog(string name, bool isTrained) =>
         new CatOrDog(name, isTrained);
+#endif
 
     public bool IsCat => _kind == Kind.Cat;
     public bool IsDog => _kind == Kind.Dog;
@@ -114,6 +134,17 @@ public readonly struct CatOrDog
         return true;
     }
 
+#if TAG_TYPED
+    public CatData GetCat() =>
+        TryGetCat(out var name, out var sleepingSpots)
+            ? new CatData(name, sleepingSpots)
+            : throw new InvalidCastException();
+
+    public DogData GetDog() =>
+        TryGetDog(out var name, out var isTrained)
+            ? new DogData(name, isTrained)
+            : throw new InvalidCastException();
+#else
     public (string name, int sleepingSpots) GetCat() =>
         TryGetCat(out var name, out var sleepingSpots)
             ? (name, sleepingSpots)
@@ -123,4 +154,5 @@ public readonly struct CatOrDog
         TryGetDog(out var name, out var isTrained)
             ? (name, isTrained)
             : throw new InvalidCastException();
+#endif
 }

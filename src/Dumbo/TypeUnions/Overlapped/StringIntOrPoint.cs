@@ -1,17 +1,49 @@
 ﻿using System;
 using System.Diagnostics.CodeAnalysis;
 using System.Drawing;
-using System.Reflection;
+using System.Runtime.InteropServices;
 
-namespace Dumbo.TypeUnions.Boxed;
+namespace Dumbo.TypeUnions.Overlapped;
 
 public struct StringIntOrPoint : ITypeUnion<StringIntOrPoint>
 {
-    private readonly object _value;
+    private readonly int _index;
+    private readonly RefData _refData;
+    private readonly ValData _valData;
 
-    private StringIntOrPoint(object value)
+    [StructLayout(LayoutKind.Explicit)]
+    private struct RefData
     {
-        _value = value;
+        [FieldOffset(0)]
+        public string _value1;
+    }
+
+    [StructLayout(LayoutKind.Explicit)]
+    private struct ValData
+    {
+        [FieldOffset(0)]
+        public int _value2;
+
+        [FieldOffset(0)]
+        public Point _value3;
+    }
+
+    private StringIntOrPoint(String value)
+    {
+        _index = 1;
+        _refData._value1 = value;
+    }
+
+    private StringIntOrPoint(int value)
+    {
+        _index = 2;
+        _valData._value2 = value;
+    }
+
+    private StringIntOrPoint(Point value)
+    {
+        _index = 3;
+        _valData._value3 = value;
     }
 
     #region Non-Generic API
@@ -24,15 +56,16 @@ public struct StringIntOrPoint : ITypeUnion<StringIntOrPoint>
     public static StringIntOrPoint Create(Point value) =>
         new StringIntOrPoint(value);
 
-    public bool IsType1 => _value is string;
-    public bool IsType2 => _value is int;
-    public bool IsType3 => _value is Point;
+    public int TypeIndex => _index;
+    public bool IsType1 => _index == 1;
+    public bool IsType2 => _index == 2;
+    public bool IsType3 => _index == 3;
 
     public bool TryGetType1([NotNullWhen(true)] out string value)
     {
-        if (_value is string val)
+        if (IsType1)
         {
-            value = val;
+            value = _refData._value1;
             return true;
         }
 
@@ -42,9 +75,9 @@ public struct StringIntOrPoint : ITypeUnion<StringIntOrPoint>
 
     public bool TryGetType2([NotNullWhen(true)] out int value)
     {
-        if (_value is int val)
+        if (IsType2)
         {
-            value = val;
+            value = _valData._value2;
             return true;
         }
 
@@ -54,9 +87,9 @@ public struct StringIntOrPoint : ITypeUnion<StringIntOrPoint>
 
     public bool TryGetType3([NotNullWhen(true)] out Point value)
     {
-        if (_value is Point val)
+        if (IsType3)
         {
-            value = val;
+            value = _valData._value3;
             return true;
         }
 
@@ -95,12 +128,24 @@ public struct StringIntOrPoint : ITypeUnion<StringIntOrPoint>
             : default!;
 
     public override string ToString() =>
-        _value?.ToString() ?? "";
+        _index switch
+        {
+            1 => _refData._value1.ToString(),
+            2 => _valData._value2.ToString(),
+            3 => _valData._value3.ToString(),
+            _ => ""
+        };
 
     public Variant ToVariant() =>
-        Variant.Create(_value);
-    #endregion
+        _index switch
+        {
+            1 => Variant.Create(_refData._value1),
+            2 => Variant.Create(_valData._value2),
+            3 => Variant.Create(_valData._value3),
+            _ => Variant.Null
+        };
 
+    #endregion
 
     #region Generic API
 
@@ -149,18 +194,52 @@ public struct StringIntOrPoint : ITypeUnion<StringIntOrPoint>
     }
 
     public bool IsType<T>() =>
-        _value is T;
+        _index switch
+        {
+            1 => _refData._value1 is T,
+            2 => _valData._value2 is T,
+            3 => _valData._value3 is T,
+            _ => false
+        };
 
     public bool TryGet<T>([NotNullWhen(true)] out T value)
     {
-        if (_value is T t)
+        switch (_index)
         {
-            value = t;
-            return true;
+            case 1:
+                if (_refData._value1 is T t1val)
+                {
+                    value = t1val;
+                    return true;
+                }
+                break;
+            case 2:
+                if (_valData._value2 is T t2val)
+                {
+                    value = t2val;
+                    return true;
+                }
+                break;
+            case 3:
+                if (_valData._value3 is T t3val)
+                {
+                    value = t3val;
+                    return true;
+                }
+                break;
         }
-        else if (TypeUnionFactory<T>.TryGetFactory(out var factory))
+
+        if (TypeUnionFactory<T>.TryGetFactory(out var factory))
         {
-            return factory.TryCreate(_value, out value);
+            switch (_index)
+            {
+                case 1:
+                    return factory.TryCreate(_refData._value1, out value);
+                case 2:
+                    return factory.TryCreate(_valData._value2, out value);
+                case 3:
+                    return factory.TryCreate(_valData._value3, out value);
+            }
         }
 
         value = default!;
@@ -171,13 +250,14 @@ public struct StringIntOrPoint : ITypeUnion<StringIntOrPoint>
         TryGet<T>(out var value)
             ? value
             : throw new InvalidCastException();
+
     #endregion
 
     public static implicit operator StringIntOrPoint(string value) => Create(value);
     public static implicit operator StringIntOrPoint(int value) => Create(value);
     public static implicit operator StringIntOrPoint(Point value) => Create(value);
 
-    public static explicit operator string(StringIntOrPoint value) => value.Get<string>();
-    public static explicit operator int(StringIntOrPoint value) => value.Get<int>();
-    public static explicit operator Point(StringIntOrPoint value) => value.Get<Point>();
+    public static explicit operator string(StringIntOrPoint value) => value.GetType1();
+    public static explicit operator int(StringIntOrPoint value) => value.GetType2();
+    public static explicit operator Point(StringIntOrPoint value) => value.GetType3();
 }

@@ -5,29 +5,137 @@ namespace Dumbo.TypeUnions.Fat;
 
 public struct StringIntOrPoint : ITypeUnion<StringIntOrPoint>
 {
-    private enum Kind { Type1 = 1, Type2, Type3 }
-
-    private readonly Kind _kind;
+    private readonly int _index;
     private readonly string _value1;
     private readonly int _value2;
     private readonly Point _value3;
 
-    private StringIntOrPoint(Kind kind, string value1, int value2, Point value3)
+    private StringIntOrPoint(string value)
     {
-        _kind = kind;
-        _value1 = value1;
-        _value2 = value2;
-        _value3 = value3;
+        _index = 1;
+        _value1 = value;
     }
 
+    private StringIntOrPoint(int value)
+    {
+        _index = 2;
+        _value1 = default!;
+        _value2 = value;
+    }
+
+    private StringIntOrPoint(Point value)
+    {
+        _index = 3;
+        _value1 = default!;
+        _value3 = value;
+    }
+
+    #region Non-Generic API
     public static StringIntOrPoint Create(string value) =>
-        new StringIntOrPoint(Kind.Type1, value, default, default);
+        new StringIntOrPoint(value);
 
     public static StringIntOrPoint Create(int value) =>
-        new StringIntOrPoint(Kind.Type2, default!, value, default);
+        new StringIntOrPoint(value);
 
     public static StringIntOrPoint Create(Point value) =>
-        new StringIntOrPoint(Kind.Type3, default!, default, value);
+        new StringIntOrPoint(value);
+
+    public int TypeIndex => _index;
+    public bool IsType1 => _index == 1;
+    public bool IsType2 => _index == 2;
+    public bool IsType3 => _index == 3;
+
+    public bool TryGetType1([NotNullWhen(true)] out string value)
+    {
+        if (IsType1)
+        {
+            value = _value1;
+            return true;
+        }
+
+        value = default!;
+        return false;
+    }
+
+    public bool TryGetType2([NotNullWhen(true)] out int value)
+    {
+        if (IsType2)
+        {
+            value = _value2;
+            return true;
+        }
+
+        value = default!;
+        return false;
+    }
+
+    public bool TryGetType3([NotNullWhen(true)] out Point value)
+    {
+        if (IsType3)
+        {
+            value = _value3;
+            return true;
+        }
+
+        value = default!;
+        return false;
+    }
+
+    public string GetType1() =>
+        TryGetType1(out var value)
+            ? value
+            : throw new InvalidCastException();
+
+    public int GetType2() =>
+        TryGetType2(out var value)
+            ? value
+            : throw new InvalidCastException();
+
+    public Point GetType3() =>
+        TryGetType3(out var value)
+            ? value
+            : throw new InvalidCastException();
+
+    public string AsType1() =>
+        TryGetType1(out var value)
+            ? value
+            : default!;
+
+    public int AsType2() =>
+        TryGetType2(out var value)
+            ? value
+            : default!;
+
+    public Point AsType3() =>
+        TryGetType3(out var value)
+            ? value
+            : default!;
+
+    public override string ToString() =>
+        _index switch
+        {
+            1 => _value1.ToString(),
+            2 => _value2.ToString(),
+            3 => _value3.ToString(),
+            _ => ""
+        };
+
+    public Variant ToVariant() =>
+        _index switch
+        {
+            1 => Variant.Create(_value1),
+            2 => Variant.Create(_value2),
+            3 => Variant.Create(_value3),
+            _ => Variant.Null
+        };
+    #endregion
+
+    #region Generic API
+
+    public static StringIntOrPoint Create<T>(T value) =>
+        TryCreate<T>(value, out var union)
+            ? union
+            : throw new InvalidCastException();
 
     public static bool TryCreate<T>(T value, [NotNullWhen(true)] out StringIntOrPoint union)
     {
@@ -69,33 +177,33 @@ public struct StringIntOrPoint : ITypeUnion<StringIntOrPoint>
     }
 
     public bool IsType<T>() =>
-        _kind switch
+        _index switch
         {
-            Kind.Type1 => typeof(T) == typeof(int) || _value1 is T,
-            Kind.Type2 => typeof(T) == typeof(string) || _value2 is T,
-            Kind.Type3 => typeof(T) == typeof(Point) || _value3 is T,
+            1 => _value1 is T,
+            2 => _value2 is T,
+            3 => _value3 is T,
             _ => false
         };
 
     public bool TryGet<T>([NotNullWhen(true)] out T value)
     {
-        switch (_kind)
+        switch (_index)
         {
-            case Kind.Type1:
+            case 1:
                 if (_value1 is T t1val)
                 {
                     value = t1val;
                     return true;
                 }
                 break;
-            case Kind.Type2:
+            case 2:
                 if (_value2 is T t2val)
                 {
                     value = t2val;
                     return true;
                 }
                 break;
-            case Kind.Type3:
+            case 3:
                 if (_value3 is T t3val)
                 {
                     value = t3val;
@@ -106,13 +214,13 @@ public struct StringIntOrPoint : ITypeUnion<StringIntOrPoint>
 
         if (TypeUnionFactory<T>.TryGetFactory(out var factory))
         {
-            switch (_kind)
+            switch (_index)
             {
-                case Kind.Type1:
+                case 1:
                     return factory.TryCreate(_value1, out value);
-                case Kind.Type2:
+                case 2:
                     return factory.TryCreate(_value2, out value);
-                case Kind.Type3:
+                case 3:
                     return factory.TryCreate(_value3, out value);
             }
         }
@@ -125,6 +233,7 @@ public struct StringIntOrPoint : ITypeUnion<StringIntOrPoint>
         TryGet<T>(out var value)
             ? value
             : throw new InvalidCastException();
+    #endregion
 
     public static implicit operator StringIntOrPoint(string value) => Create(value);
     public static implicit operator StringIntOrPoint(int value) => Create(value);
@@ -133,22 +242,4 @@ public struct StringIntOrPoint : ITypeUnion<StringIntOrPoint>
     public static explicit operator string(StringIntOrPoint value) => value.Get<string>();
     public static explicit operator int(StringIntOrPoint value) => value.Get<int>();
     public static explicit operator Point(StringIntOrPoint value) => value.Get<Point>();
-
-    public override string ToString() =>
-        _kind switch
-        {
-            Kind.Type1 => _value1.ToString(),
-            Kind.Type2 => _value2.ToString(),
-            Kind.Type3 => _value3.ToString(),
-            _ => ""
-        };
-
-    public Variant ToVariant() =>
-        _kind switch
-        {
-            Kind.Type1 => Variant.Create(_value1),
-            Kind.Type2 => Variant.Create(_value2),
-            Kind.Type3 => Variant.Create(_value3),
-            _ => Variant.Null
-        };
 }

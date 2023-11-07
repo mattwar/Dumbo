@@ -31,7 +31,7 @@ namespace Benchmarks
 
             Test(() =>
             {
-                if (union.TryGetCat(out var name, out var sleepingSpots))
+                if (union.TryGetDog(out var name, out var isTrained))
                 {
                 }
             });
@@ -44,7 +44,7 @@ namespace Benchmarks
 
             Test(() =>
             {
-                if (union.TryGetCat(out var name, out var sleepingSpots))
+                if (union.TryGetDog(out var name, out var isTrained))
                 {
                 }
             });
@@ -57,7 +57,7 @@ namespace Benchmarks
 
             Test(() =>
             {
-                if (union.TryGetCat(out var name, out var sleepingSpots))
+                if (union.TryGetDog(out var name, out var isTrained))
                 {
                 }
             });
@@ -70,7 +70,7 @@ namespace Benchmarks
 
             Test(() =>
             {
-                if (union.TryGetCat(out var name, out var sleepingSpots))
+                if (union.TryGetDog(out var name, out var isTrained))
                 {
                 }
             });
@@ -83,7 +83,7 @@ namespace Benchmarks
 
             Test(() =>
             {
-                if (union.TryGetCat(out var name, out var sleepingSpots))
+                if (union.TryGetDog(out var name, out var isTrained))
                 {
                 }
             });
