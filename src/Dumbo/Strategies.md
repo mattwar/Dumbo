@@ -193,8 +193,8 @@ The implementation strategies differ on:
 
     ```
     abstract record TagUnion {     
-        private record Tag1Data(TA v1, TB v2) : Union;
-        private record Tag2Data(TA v1, TC v2, TC v3) : Union;
+        private record Tag1Data(TA v1, TB v2) : TagUnion;
+        private record Tag2Data(TA v1, TC v2, TC v3) : TagUnion;
 
         public static TagUnion Tag1(TA v1, TB v2) => new Tag1Data(v1, v2);
         public static TagUnion Tag2(TA v1, TC v2, TC v3) new Tag2Data(v1, v2, v3);
@@ -219,8 +219,8 @@ The implementation strategies differ on:
 
     ```
     abstract record TagUnion {     
-        public record Tag1(TA v1, TB v2) : Union;
-        public record Tag2(TA v1, TC v2, TC v3) : Union;
+        public record Tag1(TA v1, TB v2) : TagUnion;
+        public record Tag2(TA v1, TC v2, TC v3) : TagUnion;
     }
     ```
 
