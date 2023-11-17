@@ -89,11 +89,11 @@ public class VariantTests
         TestCreateAndAccess<double?>(1.0);
         TestCreateAndAccess<double?>(null);
 
-        TestCreateAndAccess<Decimal64>(Decimal64.Convert(1.0m));
-        TestCreateAndAccess<Decimal64>(Decimal64.Convert(0.0m));
+        TestCreateAndAccess<Decimal64>(Decimal64.Create(1.0m));
+        TestCreateAndAccess<Decimal64>(Decimal64.Create(0.0m));
         TestCreateAndAccess<Decimal64>(Decimal64.MinValue);
         TestCreateAndAccess<Decimal64>(Decimal64.MaxValue);
-        TestCreateAndAccess<Decimal64?>(Decimal64.Convert(1.0m));
+        TestCreateAndAccess<Decimal64?>(Decimal64.Create(1.0m));
         TestCreateAndAccess<Decimal64?>(null);
 
         TestCreateAndAccess<decimal>(1.0m);

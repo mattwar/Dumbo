@@ -375,7 +375,7 @@ public readonly struct Variant : ITypeUnion<Variant>, IEquatable<Variant>
     {
         public override Variant Encode(decimal value)
         {
-            if (Decimal64.TryConvert(value, out var decVal))
+            if (Decimal64.TryCreate(value, out var decVal))
             {
                 var bits = Unsafe.As<Decimal64, Bits>(ref decVal);
                 return new Variant(DecimalEncoding.Instance, bits);

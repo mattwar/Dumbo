@@ -150,7 +150,7 @@ namespace Dumbo
                     }
                     else if (ttype == typeof(Decimal64)
                         && TryConvertToDecimal(in variant, out decimalValue)
-                        && Decimal64.TryConvert(decimalValue, out var dec64Value)
+                        && Decimal64.TryCreate(decimalValue, out var dec64Value)
                         && dec64Value is T tdec64Value)
                     {
                         value = tdec64Value;
