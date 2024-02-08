@@ -1,5 +1,4 @@
-﻿using System;
-using System.Diagnostics.CodeAnalysis;
+﻿using System.Diagnostics.CodeAnalysis;
 using System.Drawing;
 
 namespace Dumbo.TypeUnions.Hybrid;
@@ -60,6 +59,33 @@ public struct StringIntOrPoint : ITypeUnion<StringIntOrPoint>
         union = default;
         return false;
     }
+
+    public bool IsString =>
+        _value.IsString;
+
+    public bool IsInt =>
+        _value.IsInt32;
+
+    public bool IsPoint =>
+        _value.IsType<Point>();
+
+    public bool TryGet([NotNullWhen(true)] out string? value) =>
+        _value.TryGet(out value);
+
+    public bool TryGet(out int value) =>
+        _value.TryGet(out value);
+
+    public bool TryGet(out Point value) =>
+        _value.TryGet(out value);
+
+    public string GetString() =>
+        _value.GetString();
+
+    public int GetInt() =>
+        _value.GetInt32();
+
+    public Point GetPoint() =>
+        _value.Get<Point>();
 
     public bool IsType<T>() =>
         _value.IsType<T>();

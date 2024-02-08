@@ -121,10 +121,9 @@ public class StringIntOrPoint_TryGet
     {
         for (int i = 0; i < Iterations; i++)
         {
-            StringIntOrPoint_Hybrid_String.TryGet(out string value);
+            StringIntOrPoint_Hybrid_String.TryGet(out string? value);
         }
     }
-
 
     [Benchmark]
     public void Int_OneOf_Boxed()

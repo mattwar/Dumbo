@@ -157,12 +157,24 @@ namespace Benchmarks
         }
 
         [Benchmark]
-        public void String_StringIntOrPoint_Hybrid()
+        public void String_StringIntOrPoint_Hybrid_Generic()
         {
             Test(() =>
             {
                 var union = H.StringIntOrPoint.Create("one");
                 if (union.TryGet<string>(out var value))
+                {
+                }
+            });
+        }
+
+        [Benchmark]
+        public void String_StringIntOrPoint_Hybrid_NonGeneric()
+        {
+            Test(() =>
+            {
+                var union = H.StringIntOrPoint.Create("one");
+                if (union.TryGet(out string? value))
                 {
                 }
             });
@@ -303,12 +315,24 @@ namespace Benchmarks
         }
 
         [Benchmark]
-        public void Int_StringIntOrPoint_Hybrid()
+        public void Int_StringIntOrPoint_Hybrid_Generic()
         {
             Test(() =>
             {
                 var union = H.StringIntOrPoint.Create(1);
                 if (union.TryGet<int>(out var value))
+                {
+                }
+            });
+        }
+
+        [Benchmark]
+        public void Int_StringIntOrPoint_Hybrid_NonGeneric()
+        {
+            Test(() =>
+            {
+                var union = H.StringIntOrPoint.Create(1);
+                if (union.TryGet(out int value))
                 {
                 }
             });

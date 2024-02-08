@@ -7,180 +7,180 @@ namespace Tests;
 public class VariantTests
 {
     [TestMethod]
-    public void TestCreateAndAccess()
+    public void TestGenericCreateAndAccess()
     {
-        TestCreateAndAccess<bool>(true);
-        TestCreateAndAccess<bool>(false);
-        TestCreateAndAccess<bool?>(true);
-        TestCreateAndAccess<bool?>(false);
-        TestCreateAndAccess<bool?>(null);
+        TestGenericCreateAndAccess<bool>(true);
+        TestGenericCreateAndAccess<bool>(false);
+        TestGenericCreateAndAccess<bool?>(true);
+        TestGenericCreateAndAccess<bool?>(false);
+        TestGenericCreateAndAccess<bool?>(null);
 
-        TestCreateAndAccess<sbyte>(1);
-        TestCreateAndAccess<sbyte>(0);
-        TestCreateAndAccess<sbyte>(sbyte.MinValue);
-        TestCreateAndAccess<sbyte>(sbyte.MaxValue);
-        TestCreateAndAccess<sbyte?>(1);
-        TestCreateAndAccess<sbyte?>(null);
+        TestGenericCreateAndAccess<sbyte>(1);
+        TestGenericCreateAndAccess<sbyte>(0);
+        TestGenericCreateAndAccess<sbyte>(sbyte.MinValue);
+        TestGenericCreateAndAccess<sbyte>(sbyte.MaxValue);
+        TestGenericCreateAndAccess<sbyte?>(1);
+        TestGenericCreateAndAccess<sbyte?>(null);
 
-        TestCreateAndAccess<short>(1);
-        TestCreateAndAccess<short>(0);
-        TestCreateAndAccess<short>(short.MinValue);
-        TestCreateAndAccess<short>(short.MaxValue);
-        TestCreateAndAccess<short?>(1);
-        TestCreateAndAccess<short?>(null);
+        TestGenericCreateAndAccess<short>(1);
+        TestGenericCreateAndAccess<short>(0);
+        TestGenericCreateAndAccess<short>(short.MinValue);
+        TestGenericCreateAndAccess<short>(short.MaxValue);
+        TestGenericCreateAndAccess<short?>(1);
+        TestGenericCreateAndAccess<short?>(null);
 
-        TestCreateAndAccess<int>(1);
-        TestCreateAndAccess<int>(0);
-        TestCreateAndAccess<int>(int.MinValue);
-        TestCreateAndAccess<int>(int.MaxValue);
-        TestCreateAndAccess<int?>(1);
-        TestCreateAndAccess<int?>(null);
+        TestGenericCreateAndAccess<int>(1);
+        TestGenericCreateAndAccess<int>(0);
+        TestGenericCreateAndAccess<int>(int.MinValue);
+        TestGenericCreateAndAccess<int>(int.MaxValue);
+        TestGenericCreateAndAccess<int?>(1);
+        TestGenericCreateAndAccess<int?>(null);
 
-        TestCreateAndAccess<long>(1);
-        TestCreateAndAccess<long>(0);
-        TestCreateAndAccess<long>(long.MinValue);
-        TestCreateAndAccess<long>(long.MaxValue);
-        TestCreateAndAccess<long?>(1);
-        TestCreateAndAccess<long?>(null);
+        TestGenericCreateAndAccess<long>(1);
+        TestGenericCreateAndAccess<long>(0);
+        TestGenericCreateAndAccess<long>(long.MinValue);
+        TestGenericCreateAndAccess<long>(long.MaxValue);
+        TestGenericCreateAndAccess<long?>(1);
+        TestGenericCreateAndAccess<long?>(null);
 
-        TestCreateAndAccess<byte>(1);
-        TestCreateAndAccess<byte>(byte.MinValue);
-        TestCreateAndAccess<byte>(byte.MaxValue);
-        TestCreateAndAccess<byte?>(1);
-        TestCreateAndAccess<byte?>(null);
+        TestGenericCreateAndAccess<byte>(1);
+        TestGenericCreateAndAccess<byte>(byte.MinValue);
+        TestGenericCreateAndAccess<byte>(byte.MaxValue);
+        TestGenericCreateAndAccess<byte?>(1);
+        TestGenericCreateAndAccess<byte?>(null);
 
-        TestCreateAndAccess<ushort>(1);
-        TestCreateAndAccess<ushort>(ushort.MinValue);
-        TestCreateAndAccess<ushort>(ushort.MaxValue);
-        TestCreateAndAccess<ushort?>(1);
-        TestCreateAndAccess<ushort?>(null);
+        TestGenericCreateAndAccess<ushort>(1);
+        TestGenericCreateAndAccess<ushort>(ushort.MinValue);
+        TestGenericCreateAndAccess<ushort>(ushort.MaxValue);
+        TestGenericCreateAndAccess<ushort?>(1);
+        TestGenericCreateAndAccess<ushort?>(null);
 
-        TestCreateAndAccess<uint>(1);
-        TestCreateAndAccess<uint>(uint.MinValue);
-        TestCreateAndAccess<uint>(uint.MaxValue);
-        TestCreateAndAccess<uint?>(1);
-        TestCreateAndAccess<uint?>(null);
+        TestGenericCreateAndAccess<uint>(1);
+        TestGenericCreateAndAccess<uint>(uint.MinValue);
+        TestGenericCreateAndAccess<uint>(uint.MaxValue);
+        TestGenericCreateAndAccess<uint?>(1);
+        TestGenericCreateAndAccess<uint?>(null);
 
-        TestCreateAndAccess<ulong>(1);
-        TestCreateAndAccess<ulong>(ulong.MinValue);
-        TestCreateAndAccess<ulong>(ulong.MaxValue);
-        TestCreateAndAccess<ulong?>(1);
-        TestCreateAndAccess<ulong?>(null);
+        TestGenericCreateAndAccess<ulong>(1);
+        TestGenericCreateAndAccess<ulong>(ulong.MinValue);
+        TestGenericCreateAndAccess<ulong>(ulong.MaxValue);
+        TestGenericCreateAndAccess<ulong?>(1);
+        TestGenericCreateAndAccess<ulong?>(null);
 
-        TestCreateAndAccess<float>(1.0f);
-        TestCreateAndAccess<float>(0.0f);
-        TestCreateAndAccess<float>(float.MinValue);
-        TestCreateAndAccess<float>(float.MaxValue);
-        TestCreateAndAccess<float>(float.Epsilon);
-        TestCreateAndAccess<float>(float.PositiveInfinity);
-        TestCreateAndAccess<float>(float.NegativeInfinity);
-        TestCreateAndAccess<float>(float.NaN);
-        TestCreateAndAccess<float?>(1.0f);
-        TestCreateAndAccess<float?>(null);
+        TestGenericCreateAndAccess<float>(1.0f);
+        TestGenericCreateAndAccess<float>(0.0f);
+        TestGenericCreateAndAccess<float>(float.MinValue);
+        TestGenericCreateAndAccess<float>(float.MaxValue);
+        TestGenericCreateAndAccess<float>(float.Epsilon);
+        TestGenericCreateAndAccess<float>(float.PositiveInfinity);
+        TestGenericCreateAndAccess<float>(float.NegativeInfinity);
+        TestGenericCreateAndAccess<float>(float.NaN);
+        TestGenericCreateAndAccess<float?>(1.0f);
+        TestGenericCreateAndAccess<float?>(null);
 
-        TestCreateAndAccess<double>(1.0);
-        TestCreateAndAccess<double>(0.0);
-        TestCreateAndAccess<double>(double.MinValue);
-        TestCreateAndAccess<double>(double.MaxValue);
-        TestCreateAndAccess<double>(double.Epsilon);
-        TestCreateAndAccess<double>(double.PositiveInfinity);
-        TestCreateAndAccess<double>(double.NegativeInfinity);
-        TestCreateAndAccess<double>(double.NaN);
-        TestCreateAndAccess<double?>(1.0);
-        TestCreateAndAccess<double?>(null);
+        TestGenericCreateAndAccess<double>(1.0);
+        TestGenericCreateAndAccess<double>(0.0);
+        TestGenericCreateAndAccess<double>(double.MinValue);
+        TestGenericCreateAndAccess<double>(double.MaxValue);
+        TestGenericCreateAndAccess<double>(double.Epsilon);
+        TestGenericCreateAndAccess<double>(double.PositiveInfinity);
+        TestGenericCreateAndAccess<double>(double.NegativeInfinity);
+        TestGenericCreateAndAccess<double>(double.NaN);
+        TestGenericCreateAndAccess<double?>(1.0);
+        TestGenericCreateAndAccess<double?>(null);
 
-        TestCreateAndAccess<Decimal64>(Decimal64.Create(1.0m));
-        TestCreateAndAccess<Decimal64>(Decimal64.Create(0.0m));
-        TestCreateAndAccess<Decimal64>(Decimal64.MinValue);
-        TestCreateAndAccess<Decimal64>(Decimal64.MaxValue);
-        TestCreateAndAccess<Decimal64?>(Decimal64.Create(1.0m));
-        TestCreateAndAccess<Decimal64?>(null);
+        TestGenericCreateAndAccess<Decimal64>(Decimal64.Create(1.0m));
+        TestGenericCreateAndAccess<Decimal64>(Decimal64.Create(0.0m));
+        TestGenericCreateAndAccess<Decimal64>(Decimal64.MinValue);
+        TestGenericCreateAndAccess<Decimal64>(Decimal64.MaxValue);
+        TestGenericCreateAndAccess<Decimal64?>(Decimal64.Create(1.0m));
+        TestGenericCreateAndAccess<Decimal64?>(null);
 
-        TestCreateAndAccess<decimal>(1.0m);
-        TestCreateAndAccess<decimal>(0.0m);
-        TestCreateAndAccess<decimal>(decimal.MinValue, isBoxed: true);
-        TestCreateAndAccess<decimal>(decimal.MaxValue, isBoxed: true);
-        TestCreateAndAccess<decimal?>(1.0m);
-        TestCreateAndAccess<decimal?>(null);
+        TestGenericCreateAndAccess<decimal>(1.0m);
+        TestGenericCreateAndAccess<decimal>(0.0m);
+        TestGenericCreateAndAccess<decimal>(decimal.MinValue, isBoxed: true);
+        TestGenericCreateAndAccess<decimal>(decimal.MaxValue, isBoxed: true);
+        TestGenericCreateAndAccess<decimal?>(1.0m);
+        TestGenericCreateAndAccess<decimal?>(null);
 
-        TestCreateAndAccess<char>('1');
-        TestCreateAndAccess<char>('\0');
-        TestCreateAndAccess<char>(char.MinValue);
-        TestCreateAndAccess<char>(char.MaxValue);
-        TestCreateAndAccess<char?>('1');
-        TestCreateAndAccess<char?>(null);
+        TestGenericCreateAndAccess<char>('1');
+        TestGenericCreateAndAccess<char>('\0');
+        TestGenericCreateAndAccess<char>(char.MinValue);
+        TestGenericCreateAndAccess<char>(char.MaxValue);
+        TestGenericCreateAndAccess<char?>('1');
+        TestGenericCreateAndAccess<char?>(null);
 
-        TestCreateAndAccess<Rune>(new Rune('1'));
-        TestCreateAndAccess<Rune>(new Rune('\0'));
-        TestCreateAndAccess<Rune?>(new Rune('1'));
-        TestCreateAndAccess<Rune?>(null);
+        TestGenericCreateAndAccess<Rune>(new Rune('1'));
+        TestGenericCreateAndAccess<Rune>(new Rune('\0'));
+        TestGenericCreateAndAccess<Rune?>(new Rune('1'));
+        TestGenericCreateAndAccess<Rune?>(null);
 
-        TestCreateAndAccess<DateOnly>(new DateOnly(2002, 4, 15));
-        TestCreateAndAccess<DateOnly>(DateOnly.MinValue);
-        TestCreateAndAccess<DateOnly>(DateOnly.MaxValue);
-        TestCreateAndAccess<DateOnly?>(new DateOnly(2002, 4, 15));
-        TestCreateAndAccess<DateOnly?>(null);
+        TestGenericCreateAndAccess<DateOnly>(new DateOnly(2002, 4, 15));
+        TestGenericCreateAndAccess<DateOnly>(DateOnly.MinValue);
+        TestGenericCreateAndAccess<DateOnly>(DateOnly.MaxValue);
+        TestGenericCreateAndAccess<DateOnly?>(new DateOnly(2002, 4, 15));
+        TestGenericCreateAndAccess<DateOnly?>(null);
 
-        TestCreateAndAccess<TimeOnly>(new TimeOnly(10, 53));
-        TestCreateAndAccess<TimeOnly>(TimeOnly.MinValue);
-        TestCreateAndAccess<TimeOnly>(TimeOnly.MaxValue);
-        TestCreateAndAccess<TimeOnly?>(new TimeOnly(10, 53));
-        TestCreateAndAccess<TimeOnly?>(null);
+        TestGenericCreateAndAccess<TimeOnly>(new TimeOnly(10, 53));
+        TestGenericCreateAndAccess<TimeOnly>(TimeOnly.MinValue);
+        TestGenericCreateAndAccess<TimeOnly>(TimeOnly.MaxValue);
+        TestGenericCreateAndAccess<TimeOnly?>(new TimeOnly(10, 53));
+        TestGenericCreateAndAccess<TimeOnly?>(null);
 
-        TestCreateAndAccess<DateTime>(DateTime.Now);
-        TestCreateAndAccess<DateTime>(DateTime.MinValue);
-        TestCreateAndAccess<DateTime>(DateTime.MaxValue);
-        TestCreateAndAccess<DateTime?>(DateTime.Now);
-        TestCreateAndAccess<DateTime?>(null);
+        TestGenericCreateAndAccess<DateTime>(DateTime.Now);
+        TestGenericCreateAndAccess<DateTime>(DateTime.MinValue);
+        TestGenericCreateAndAccess<DateTime>(DateTime.MaxValue);
+        TestGenericCreateAndAccess<DateTime?>(DateTime.Now);
+        TestGenericCreateAndAccess<DateTime?>(null);
 
-        TestCreateAndAccess<TimeSpan>(TimeSpan.FromMinutes(53));
-        TestCreateAndAccess<TimeSpan>(TimeSpan.MinValue);
-        TestCreateAndAccess<TimeSpan>(TimeSpan.MaxValue);
-        TestCreateAndAccess<TimeSpan?>(TimeSpan.FromMinutes(53));
-        TestCreateAndAccess<TimeSpan?>(null);
+        TestGenericCreateAndAccess<TimeSpan>(TimeSpan.FromMinutes(53));
+        TestGenericCreateAndAccess<TimeSpan>(TimeSpan.MinValue);
+        TestGenericCreateAndAccess<TimeSpan>(TimeSpan.MaxValue);
+        TestGenericCreateAndAccess<TimeSpan?>(TimeSpan.FromMinutes(53));
+        TestGenericCreateAndAccess<TimeSpan?>(null);
 
-        TestCreateAndAccess<string>("string");
-        TestCreateAndAccess<string>("");
-        TestCreateAndAccess<string?>("string");
-        TestCreateAndAccess<string?>(null);
+        TestGenericCreateAndAccess<string>("string");
+        TestGenericCreateAndAccess<string>("");
+        TestGenericCreateAndAccess<string?>("string");
+        TestGenericCreateAndAccess<string?>(null);
 
-        TestCreateAndAccess<Guid>(Guid.NewGuid(), isBoxed: true);
-        TestCreateAndAccess<Guid?>(Guid.NewGuid(), isBoxed: true);
-        TestCreateAndAccess<Guid?>(null);
+        TestGenericCreateAndAccess<Guid>(Guid.NewGuid(), isBoxed: true);
+        TestGenericCreateAndAccess<Guid?>(Guid.NewGuid(), isBoxed: true);
+        TestGenericCreateAndAccess<Guid?>(null);
 
-        TestCreateAndAccess<ReferenceType>(new ReferenceType("one", 1));
-        TestCreateAndAccess<ReferenceType?>(new ReferenceType("one", 1));
-        TestCreateAndAccess<ReferenceType?>(null);
+        TestGenericCreateAndAccess<ReferenceType>(new ReferenceType("one", 1));
+        TestGenericCreateAndAccess<ReferenceType?>(new ReferenceType("one", 1));
+        TestGenericCreateAndAccess<ReferenceType?>(null);
 
-        TestCreateAndAccess<WrapperStruct>(new WrapperStruct("one"));
-        TestCreateAndAccess<WrapperStruct?>(new WrapperStruct("one"));
-        TestCreateAndAccess<WrapperStruct?>(null);
+        TestGenericCreateAndAccess<WrapperStruct>(new WrapperStruct("one"));
+        TestGenericCreateAndAccess<WrapperStruct?>(new WrapperStruct("one"));
+        TestGenericCreateAndAccess<WrapperStruct?>(null);
 
-        TestCreateAndAccess<SmallStructMixed>(new SmallStructMixed("one", 1), isBoxed: true);
-        TestCreateAndAccess<SmallStructMixed?>(new SmallStructMixed("one", 1), isBoxed: true);
-        TestCreateAndAccess<SmallStructMixed?>(null);
+        TestGenericCreateAndAccess<SmallStructMixed>(new SmallStructMixed("one", 1), isBoxed: true);
+        TestGenericCreateAndAccess<SmallStructMixed?>(new SmallStructMixed("one", 1), isBoxed: true);
+        TestGenericCreateAndAccess<SmallStructMixed?>(null);
 
-        TestCreateAndAccess<LargeStructMixed>(new LargeStructMixed("one", 1, "two", 2), isBoxed: true);
-        TestCreateAndAccess<LargeStructMixed?>(new LargeStructMixed("one", 1, "two", 2), isBoxed: true);
-        TestCreateAndAccess<LargeStructMixed?>(null);
+        TestGenericCreateAndAccess<LargeStructMixed>(new LargeStructMixed("one", 1, "two", 2), isBoxed: true);
+        TestGenericCreateAndAccess<LargeStructMixed?>(new LargeStructMixed("one", 1, "two", 2), isBoxed: true);
+        TestGenericCreateAndAccess<LargeStructMixed?>(null);
 
-        TestCreateAndAccess<SmallStructNoRefs>(new SmallStructNoRefs(1, 2));
-        TestCreateAndAccess<SmallStructNoRefs?>(new SmallStructNoRefs(1, 2));
-        TestCreateAndAccess<SmallStructNoRefs?>(null);
+        TestGenericCreateAndAccess<SmallStructNoRefs>(new SmallStructNoRefs(1, 2));
+        TestGenericCreateAndAccess<SmallStructNoRefs?>(new SmallStructNoRefs(1, 2));
+        TestGenericCreateAndAccess<SmallStructNoRefs?>(null);
 
-        TestCreateAndAccess<LargeStructNoRefs>(new LargeStructNoRefs(1, 2, 3, 4), isBoxed: true);
-        TestCreateAndAccess<LargeStructNoRefs?>(new LargeStructNoRefs(1, 2, 3, 4), isBoxed: true);
-        TestCreateAndAccess<LargeStructNoRefs?>(null);
+        TestGenericCreateAndAccess<LargeStructNoRefs>(new LargeStructNoRefs(1, 2, 3, 4), isBoxed: true);
+        TestGenericCreateAndAccess<LargeStructNoRefs?>(new LargeStructNoRefs(1, 2, 3, 4), isBoxed: true);
+        TestGenericCreateAndAccess<LargeStructNoRefs?>(null);
 
         // enums
-        TestCreateAndAccess(I8Enum.A);
-        TestCreateAndAccess(I16Enum.A);
-        TestCreateAndAccess(I32Enum.A);
-        TestCreateAndAccess(I64Enum.A);
-        TestCreateAndAccess(UI8Enum.A);
-        TestCreateAndAccess(UI16Enum.A);
-        TestCreateAndAccess(UI32Enum.A);
-        TestCreateAndAccess(UI64Enum.A);
+        TestGenericCreateAndAccess(I8Enum.A);
+        TestGenericCreateAndAccess(I16Enum.A);
+        TestGenericCreateAndAccess(I32Enum.A);
+        TestGenericCreateAndAccess(I64Enum.A);
+        TestGenericCreateAndAccess(UI8Enum.A);
+        TestGenericCreateAndAccess(UI16Enum.A);
+        TestGenericCreateAndAccess(UI32Enum.A);
+        TestGenericCreateAndAccess(UI64Enum.A);
     }
 
     private record ReferenceType(string a, int b);
@@ -199,7 +199,7 @@ public class VariantTests
     private enum UI32Enum : uint { A = 1, B, C };
     private enum UI64Enum : ulong { A = 1, B, C };
 
-    private void TestCreateAndAccess<T>(T value, bool isBoxed = false)
+    private void TestGenericCreateAndAccess<T>(T value, bool isBoxed = false)
     {
         var v = Variant.Create(value);
 
@@ -241,6 +241,21 @@ public class VariantTests
         IsNullableType(type)
             ? type.GetGenericArguments()[0]
             : type;
+
+    [TestMethod]
+    public void TestNonGenericAPI()
+    {
+        Variant v = Variant.Create(10);
+        var ival = v.GetInt32();
+        Assert.AreEqual(10, ival);
+
+        var ival2 = v.Get<int>();
+        Assert.AreEqual(ival, ival2);
+
+        var v2 = Variant.Create<int>(10);
+        var ival3 = v2.GetInt32();
+        Assert.AreEqual(ival, ival3);
+    }
 
     [TestMethod]
     public void TestIsType()
