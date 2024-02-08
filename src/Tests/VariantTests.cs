@@ -243,7 +243,7 @@ public class VariantTests
             : type;
 
     [TestMethod]
-    public void TestNonGenericAPI()
+    public void TestNonGenericAPI_Int32()
     {
         Variant v = Variant.Create(10);
         var ival = v.GetInt32();
@@ -255,6 +255,18 @@ public class VariantTests
         var v2 = Variant.Create<int>(10);
         var ival3 = v2.GetInt32();
         Assert.AreEqual(ival, ival3);
+    }
+
+    [TestMethod]
+    public void TestNonGenericAPI_String()
+    {
+        Variant v = Variant.Create("ten");
+        var success = v.TryGet(out string? sval);
+        Assert.IsTrue(success);
+        Assert.AreEqual("ten", sval);
+
+        var sval2 = v.Get<string>();
+        Assert.AreEqual(sval, sval2);
     }
 
     [TestMethod]

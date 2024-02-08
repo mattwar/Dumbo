@@ -180,7 +180,7 @@ public readonly struct Variant : ITypeUnion<Variant>, IEquatable<Variant>
         (value == null) ? Null : Create(value.Value);
 
     public static Variant Create(string? value) =>
-        (value == null) ? Null : Create(value);
+        (value == null) ? Null : new Variant(value, default);
 
     public static Variant Create(Guid value) =>
         new Variant(value, default);
