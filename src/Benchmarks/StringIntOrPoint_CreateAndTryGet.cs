@@ -180,7 +180,29 @@ namespace Benchmarks
             });
         }
 
+        [Benchmark]
+        public void String_Erased_Hybrid_Generic()
+        {
+            Test(() =>
+            {
+                var union = Variant.Create("one");
+                if (union.TryGet<string>(out var value))
+                {
+                }
+            });
+        }
 
+        [Benchmark]
+        public void String_Erased_Hybrid_NonGeneric()
+        {
+            Test(() =>
+            {
+                var union = Variant.Create(1);
+                if (union.TryGet(out string? value))
+                {
+                }
+            });
+        }
 
         [Benchmark]
         public void Int_OneOf_Boxed_Generic()
@@ -338,6 +360,29 @@ namespace Benchmarks
             });
         }
 
+        [Benchmark]
+        public void Int_Erased_Hybrid_Generic()
+        {
+            Test(() =>
+            {
+                var union = Variant.Create(1);
+                if (union.TryGet(out int value))
+                {
+                }
+            });
+        }
+
+        [Benchmark]
+        public void Int_Erased_Hybrid_NonGeneric()
+        {
+            Test(() =>
+            {
+                var union = Variant.Create(1);
+                if (union.TryGet(out int value))
+                {
+                }
+            });
+        }
 
         [Benchmark]
         public void Point_OneOf_BoxedGeneric()
@@ -478,6 +523,18 @@ namespace Benchmarks
             {
                 var union = H.StringIntOrPoint.Create(new Point(1, 1));
                 if (union.TryGet<Point>(out var value))
+                {
+                }
+            });
+        }
+
+        [Benchmark]
+        public void Point_Erased_Hybrid()
+        {
+            Test(() =>
+            {
+                var union = Variant.Create(new Point(1, 1));
+                if (union.TryGet(out Point value))
                 {
                 }
             });
