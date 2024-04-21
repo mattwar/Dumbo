@@ -29,8 +29,8 @@ public readonly struct Variant : ITypeUnion<Variant>, IEquatable<Variant>
     /// <summary>
     /// The encoding of this variant
     /// </summary>
-    private VariantEncoding Encoding =>
-        VariantEncoding.GetEncoding(in this);
+    private Encoding GetEncoding() =>
+        Encoding.GetEncoding(in this);
 
     /// <summary>
     /// A variant containing the null value.
@@ -42,139 +42,178 @@ public readonly struct Variant : ITypeUnion<Variant>, IEquatable<Variant>
     /// True if the value held in this variant is a boxed value type.
     /// </summary>
     public bool IsBoxed =>
-        Encoding is ReferenceEncoding
+        GetEncoding() is ReferenceEncoding
         && Type.IsValueType;
 
     /// <summary>
     /// True if the value is null.
     /// </summary>
     public bool IsNull =>
-        Encoding.IsNull(in this);
-
+        GetEncoding().IsNull(in this);
 
     /// <summary>
     /// The type of the value held within this variant.
     /// </summary>
     public Type Type =>
-        Encoding.GetType(in this);
+        GetEncoding().GetType(in this);
 
     /// <summary>
     /// The kind of value contained.
     /// </summary>
     public VariantKind Kind =>
-        Encoding.GetKind(in this);
+        GetEncoding().GetKind(in this);
 
-    #region encodings
-    private static BoolEncoding _boolEncoding = BoolEncoding.Instance;
-    private static ByteEncoding _byteEncoding = ByteEncoding.Instance;
-    private static SByteEncoding _sbyteEncoding = SByteEncoding.Instance;
-    private static Int16Encoding _int16Encoding = Int16Encoding.Instance;
-    private static UInt16Encoding _uint16Encoding = UInt16Encoding.Instance;
-    private static Int32Encoding _int32Encoding = Int32Encoding.Instance;
-    private static UInt32Encoding _uint32Encoding = UInt32Encoding.Instance;
-    private static Int64Encoding _int64Encoding = Int64Encoding.Instance;
-    private static UInt64Encoding _uint64Encoding = UInt64Encoding.Instance;
-    private static SingleEncoding _singleEncoding = SingleEncoding.Instance;
-    private static DoubleEncoding _doubleEncoding = DoubleEncoding.Instance;
-    private static DecimalEncoding _decimalEncoding = DecimalEncoding.Instance;
-    private static Decimal64Encoding _decimal64Encoding = Decimal64Encoding.Instance;
-    private static CharEncoding _charEncoding = CharEncoding.Instance;
-    private static RuneEncoding _runeEncoding = RuneEncoding.Instance;
-    private static DateTimeEncoding _dateTimeEncoding = DateTimeEncoding.Instance;
-    private static DateOnlyEncoding _dateOnlyEncoding = DateOnlyEncoding.Instance;
-    private static TimeSpanEncoding _timeSpanEncoding = TimeSpanEncoding.Instance;
-    private static TimeOnlyEncoding _timeOnlyEncoding = TimeOnlyEncoding.Instance;
+    #region primitive encoders
+
+    private static class Encoders
+    {
+        private static Encoder<bool> _bool = default!;
+        public static Encoder<bool> Bool => _bool ??= Encoder<bool>.Instance;
+
+        private static Encoder<byte> _byte = default!;
+        public static Encoder<byte> Byte => _byte ??= Encoder<byte>.Instance;
+
+        private static Encoder<sbyte> _sbyte = default!;
+        public static Encoder<sbyte> SByte => _sbyte ??= Encoder<sbyte>.Instance;
+
+        private static Encoder<short> _int16 = default!;
+        public static Encoder<short> Int16 => _int16 ??= Encoder<short>.Instance;
+
+        private static Encoder<ushort> _uint16 = default!;
+        public static Encoder<ushort> UInt16 => _uint16 ??= Encoder<ushort>.Instance;
+
+        private static Encoder<int> _int32 = default!;
+        public static Encoder<int> Int32 => _int32 ??= Encoder<int>.Instance;
+
+        private static Encoder<uint> _uint32 = default!;
+        public static Encoder<uint> UInt32 => _uint32 ??= Encoder<uint>.Instance;
+
+        private static Encoder<long> _int64 = default!;
+        public static Encoder<long> Int64 => _int64 ??= Encoder<long>.Instance;
+
+        private static Encoder<ulong> _uint64 = default!;
+        public static Encoder<ulong> UInt64 => _uint64 ??= Encoder<ulong>.Instance;
+
+        private static Encoder<float> _single = default!;
+        public static Encoder<float> Single => _single ??= Encoder<float>.Instance;
+
+        private static Encoder<double> _double = default!;
+        public static Encoder<double> Double => _double ??= Encoder<double>.Instance;
+
+        private static Encoder<decimal> _decimal = default!;
+        public static Encoder<decimal> Decimal => _decimal ??= Encoder<decimal>.Instance;
+
+        private static Encoder<Decimal64> _decimal64 = default!;
+        public static Encoder<Decimal64> Decimal64 => _decimal64 ??= Encoder<Decimal64>.Instance;
+
+        private static Encoder<char> _char = default!;
+        public static Encoder<char> Char => _char ??= Encoder<char>.Instance;
+
+        private static Encoder<Rune> _rune = default!;
+        public static Encoder<Rune> Rune => _rune ??= Encoder<Rune>.Instance;
+
+        private static Encoder<DateTime> _dateTime = default!;
+        public static Encoder<DateTime> DateTime => _dateTime ??= Encoder<DateTime>.Instance;
+
+        private static Encoder<DateOnly> _dateOnly = default!;
+        public static Encoder<DateOnly> DateOnly => _dateOnly ??= Encoder<DateOnly>.Instance;
+
+        private static Encoder<TimeSpan> _timeSpan = default!;
+        public static Encoder<TimeSpan> TimeSpan => _timeSpan ??= Encoder<TimeSpan>.Instance;
+
+        private static Encoder<TimeOnly> _timeOnly = default!;
+        public static Encoder<TimeOnly> TimeOnly => _timeOnly ??= Encoder<TimeOnly>.Instance;
+    }
+
     #endregion
 
     #region Create
     public static Variant Create(bool value) =>
-        new Variant(_boolEncoding, new OverlappedBits { _boolVal = value });
+        Encoders.Bool.Encode(value);
 
     public static Variant Create(bool? value) =>
         (value == null) ? Null : Create(value.Value);
 
     public static Variant Create(byte value) =>
-        new Variant(_byteEncoding, new OverlappedBits { _byteVal = value });
+        Encoders.Byte.Encode(value);
 
     public static Variant Create(byte? value) =>
         (value == null) ? Null : Create(value.Value);
 
     public static Variant Create(sbyte value) =>
-        new Variant(_sbyteEncoding, new OverlappedBits { _sbyteVal = value });
+        Encoders.SByte.Encode(value);
 
     public static Variant Create(sbyte? value) =>
         (value == null) ? Null : Create(value.Value);
 
     public static Variant Create(short value) =>
-        new Variant(_int16Encoding, new OverlappedBits { _int16Val = value });
+        Encoders.Int16.Encode(value);
 
     public static Variant Create(short? value) =>
         (value == null) ? Null : Create(value.Value);
 
     public static Variant Create(ushort value) =>
-        new Variant(_uint16Encoding, new OverlappedBits { _uint16Val = value });
+        Encoders.UInt16.Encode(value);
 
     public static Variant Create(ushort? value) =>
         (value == null) ? Null : Create(value.Value);
 
     public static Variant Create(int value) =>
-        new Variant(_int32Encoding, new OverlappedBits { _int32Val = value });
+        Encoders.Int32.Encode(value);
 
     public static Variant Create(int? value) =>
         (value == null) ? Null : Create(value.Value);
 
     public static Variant Create(uint value) =>
-        new Variant(_uint32Encoding, new OverlappedBits { _uint32Val = value });
+        Encoders.UInt32.Encode(value);
 
     public static Variant Create(uint? value) =>
         (value == null) ? Null : Create(value.Value);
 
     public static Variant Create(long value) =>
-        new Variant(_int64Encoding, new OverlappedBits { _int64Val = value });
+        Encoders.Int64.Encode(value);
 
     public static Variant Create(long? value) =>
         (value == null) ? Null : Create(value.Value);
 
     public static Variant Create(ulong value) =>
-        new Variant(_uint64Encoding, new OverlappedBits { _uint64Val = value });
+        Encoders.UInt64.Encode(value);
 
     public static Variant Create(ulong? value) =>
         (value == null) ? Null : Create(value.Value);
 
     public static Variant Create(float value) =>
-        new Variant(_singleEncoding, new OverlappedBits { _singleVal = value });
+        Encoders.Single.Encode(value);
 
     public static Variant Create(float? value) =>
         (value == null) ? Null : Create(value.Value);
 
     public static Variant Create(double value) =>
-        new Variant(_doubleEncoding, new OverlappedBits { _doubleVal = value });
+        Encoders.Double.Encode(value);
 
     public static Variant Create(double? value) =>
         (value == null) ? Null : Create(value.Value);
 
     public static Variant Create(Decimal64 value) =>
-        new Variant(_decimal64Encoding, new OverlappedBits { _decimal64Val = value });
+        Encoders.Decimal64.Encode(value);
 
     public static Variant Create(Decimal64? value) =>
         (value == null) ? Null : Create(value.Value);
 
     public static Variant Create(decimal value) =>
-        Decimal64.TryCreate(value, out var dec64)
-            ? new Variant(_decimalEncoding, new OverlappedBits { _decimal64Val = dec64 })
-            : new Variant(value, default);
+        Encoders.Decimal.Encode(value);
 
     public static Variant Create(decimal? value) =>
         (value == null) ? Null : Create(value.Value);
 
     public static Variant Create(char value) =>
-        new Variant(_charEncoding, new OverlappedBits { _charVal = value });
+        Encoders.Char.Encode(value);
 
     public static Variant Create(char? value) =>
         (value == null) ? Null : Create(value.Value);
 
     public static Variant Create(Rune value) =>
-        new Variant(_runeEncoding, new OverlappedBits { _runeVal = value });
+        Encoders.Rune.Encode(value);
 
     public static Variant Create(Rune? value) =>
         (value == null) ? Null : Create(value.Value);
@@ -189,25 +228,25 @@ public readonly struct Variant : ITypeUnion<Variant>, IEquatable<Variant>
         (value == null) ? Null : Create(value.Value);
 
     public static Variant Create(DateTime value) =>
-        new Variant(_dateTimeEncoding, new OverlappedBits { _dateTimeVal = value });
+        Encoders.DateTime.Encode(value);
 
     public static Variant Create(DateTime? value) =>
         (value == null) ? Null : Create(value.Value);
 
     public static Variant Create(DateOnly value) =>
-        new Variant(_dateOnlyEncoding, new OverlappedBits { _dateOnlyVal = value });
+        Encoders.DateOnly.Encode(value);
 
     public static Variant Create(DateOnly? value) =>
         (value == null) ? Null : Create(value.Value);
 
     public static Variant Create(TimeSpan value) =>
-        new Variant(_timeSpanEncoding, new OverlappedBits { _timeSpanVal = value });
+        Encoders.TimeSpan.Encode(value);
 
     public static Variant Create(TimeSpan? value) =>
         (value == null) ? Null : Create(value.Value);
 
     public static Variant Create(TimeOnly value) =>
-        new Variant(_timeOnlyEncoding, new OverlappedBits { _timeOnlyVal = value });
+        Encoders.TimeOnly.Encode(value);
 
     public static Variant Create(TimeOnly? value) =>
         (value == null) ? Null : Create(value.Value);
@@ -215,49 +254,49 @@ public readonly struct Variant : ITypeUnion<Variant>, IEquatable<Variant>
 
     #region Is tests
     public bool IsBoolean =>
-        Encoding.GetType() == typeof(bool);
+        GetEncoding().GetType(this) == typeof(bool);
 
     public bool IsByte =>
-        Encoding.GetType() == typeof(byte);
+        GetEncoding().GetType(this) == typeof(byte);
 
     public bool IsSByte =>
-        Encoding.GetType() == typeof(sbyte);
+        GetEncoding().GetType(this) == typeof(sbyte);
 
     public bool IsInt16 =>
-        Encoding.GetType() == typeof(short);
+        GetEncoding().GetType(this) == typeof(short);
 
     public bool IsUInt16 =>
-        Encoding.GetType() == typeof(ushort);
+        GetEncoding().GetType(this) == typeof(ushort);
 
     public bool IsInt32 =>
-        Encoding.GetType() == typeof(int);
+        GetEncoding().GetType(this) == typeof(int);
 
     public bool IsUInt32 =>
-        Encoding.GetType() == typeof(uint);
+        GetEncoding().GetType(this) == typeof(uint);
 
     public bool IsInt64 =>
-        Encoding.GetType() == typeof(long);
+        GetEncoding().GetType(this) == typeof(long);
 
     public bool IsUInt64 =>
-        Encoding.GetType() == typeof(ulong);
+        GetEncoding().GetType(this) == typeof(ulong);
 
     public bool IsSingle =>
-        Encoding.GetType() == typeof(float);
+        GetEncoding().GetType(this) == typeof(float);
 
     public bool IsDouble =>
-        Encoding.GetType() == typeof(double);
+        GetEncoding().GetType(this) == typeof(double);
 
     public bool IsDecimal =>
-        Encoding.GetType() == typeof(decimal);
+        GetEncoding().GetType(this) == typeof(decimal);
 
     public bool IsDecimal64 =>
-        Encoding.GetType() == typeof(Decimal64);
+        GetEncoding().GetType(this) == typeof(Decimal64);
 
     public bool IsChar =>
-        Encoding.GetType() == typeof(char);
+        GetEncoding().GetType(this) == typeof(char);
 
     public bool IsRune =>
-        Encoding.GetType() == typeof(Rune);
+        GetEncoding().GetType(this) == typeof(Rune);
 
     public bool IsString =>
         _reference is string;
@@ -266,141 +305,66 @@ public readonly struct Variant : ITypeUnion<Variant>, IEquatable<Variant>
         _reference is Guid;
 
     public bool IsDateTime =>
-        Encoding.GetType() == typeof(DateTime);
+        GetEncoding().GetType(this) == typeof(DateTime);
 
     public bool IsDateOnly =>
-        Encoding.GetType() == typeof(DateOnly);
+        GetEncoding().GetType(this) == typeof(DateOnly);
 
     public bool IsTimeSpan =>
-        Encoding.GetType() == typeof(TimeSpan);
+        GetEncoding().GetType(this) == typeof(TimeSpan);
 
     public bool IsTimeOnly =>
-        Encoding.GetType() == typeof(TimeOnly);
+        GetEncoding().GetType(this) == typeof(TimeOnly);
 
     public bool IsOther =>
         _reference != null;
     #endregion
 
     #region TryGet
-    public bool TryGet(out bool value)
-    {
-        if (_reference == _boolEncoding) { value = _overlapped._boolVal; return true; }
-        if (_reference is VariantEncoding<bool> encoding) { value = encoding.Decode(in this); return true; }
-        value = default;
-        return false;
-    }
+    public bool TryGet(out bool value) =>
+        Encoders.Bool.TryDecode(this, out value);
 
-    public bool TryGet(out byte value)
-    {
-        if (_reference == _byteEncoding) { value = _overlapped._byteVal; return true; }
-        if (_reference is VariantEncoding<byte> encoding) { value = encoding.Decode(in this); return true; }
-        value = default;
-        return false;
-    }
+    public bool TryGet(out byte value) =>
+        Encoders.Byte.TryDecode(this, out value);
 
-    public bool TryGet(out sbyte value)
-    {
-        if (_reference == _sbyteEncoding) { value = _overlapped._sbyteVal; return true; }
-        if (_reference is VariantEncoding<sbyte> encoding) { value = encoding.Decode(in this); return true; }
-        value = default;
-        return false;
-    }
+    public bool TryGet(out sbyte value) =>
+        Encoders.SByte.TryDecode(this, out value);
 
-    public bool TryGet(out short value)
-    {
-        if (_reference == _int16Encoding) { value = _overlapped._int16Val; return true; }
-        if (_reference is VariantEncoding<short> encoding) { value = encoding.Decode(in this); return true; }
-        value = default;
-        return false;
-    }
+    public bool TryGet(out short value) =>
+        Encoders.Int16.TryDecode(this, out value);
 
-    public bool TryGet(out ushort value)
-    {
-        if (_reference == _uint16Encoding) { value = _overlapped._uint16Val; return true; }
-        if (_reference is VariantEncoding<ushort> encoding) { value = encoding.Decode(in this); return true; }
-        value = default;
-        return false;
-    }
+    public bool TryGet(out ushort value) =>
+        Encoders.UInt16.TryDecode(this, out value);
 
-    public bool TryGet(out int value)
-    {
-        if (_reference == _int32Encoding) { value = _overlapped._int32Val; return true; }
-        if (_reference is VariantEncoding<int> encoding) { value = encoding.Decode(in this); return true; }
-        value = default;
-        return false;
-    }
+    public bool TryGet(out int value) =>
+        Encoders.Int32.TryDecode(this, out value);
 
-    public bool TryGet(out uint value)
-    {
-        if (_reference == _uint32Encoding) { value = _overlapped._uint32Val; return true; }
-        if (_reference is VariantEncoding<uint> encoding) { value = encoding.Decode(in this); return true; }
-        value = default;
-        return false;
-    }
+    public bool TryGet(out uint value) =>
+        Encoders.UInt32.TryDecode(this, out value);
 
-    public bool TryGet(out long value)
-    {
-        if (_reference == _int32Encoding) { value = _overlapped._int32Val; return true; }
-        if (_reference is VariantEncoding<long> encoding) { value = encoding.Decode(in this); return true; }
-        value = default;
-        return false;
-    }
+    public bool TryGet(out long value) =>
+        Encoders.Int64.TryDecode(this, out value);
 
-    public bool TryGet(out ulong value)
-    {
-        if (_reference == _uint64Encoding) { value = _overlapped._uint64Val; return true; }
-        if (_reference is VariantEncoding<ulong> encoding) { value = encoding.Decode(in this); return true; }
-        value = default;
-        return false;
-    }
+    public bool TryGet(out ulong value) =>
+        Encoders.UInt64.TryDecode(this, out value);
 
-    public bool TryGet(out float value)
-    {
-        if (_reference == _singleEncoding) { value = _overlapped._singleVal; return true; }
-        if (_reference is VariantEncoding<float> encoding) { value = encoding.Decode(in this); return true; }
-        value = default;
-        return false;
-    }
+    public bool TryGet(out float value) =>
+        Encoders.Single.TryDecode(this, out value);
 
-    public bool TryGet(out double value)
-    {
-        if (_reference == _doubleEncoding) { value = _overlapped._doubleVal; return true; }
-        if (_reference is VariantEncoding<double> encoding) { value = encoding.Decode(in this); return true; }
-        value = default;
-        return false;
-    }
+    public bool TryGet(out double value) =>
+        Encoders.Double.TryDecode(this, out value);
 
-    public bool TryGet(out Decimal64 value)
-    {
-        if (_reference == _decimal64Encoding) { value = _overlapped._decimal64Val; return true; }
-        if (_reference is VariantEncoding<Decimal64> encoding) { value = encoding.Decode(in this); return true; }
-        value = default;
-        return false;
-    }
+    public bool TryGet(out Decimal64 value) =>
+        Encoders.Decimal64.TryDecode(this, out value);
 
-    public bool TryGet(out decimal value)
-    {
-        if (_reference == _decimalEncoding) { value = _overlapped._decimal64Val.ToDecimal(); return true; }
-        if (_reference is VariantEncoding<decimal> encoding) { value = encoding.Decode(in this); return true; }
-        value = default;
-        return false;
-    }
+    public bool TryGet(out decimal value) =>
+        Encoders.Decimal.TryDecode(this, out value);
 
-    public bool TryGet(out char value)
-    {
-        if (_reference == _charEncoding) { value = _overlapped._charVal; return true; }
-        if (_reference is VariantEncoding<char> encoding) { value = encoding.Decode(in this); return true; }
-        value = default;
-        return false;
-    }
+    public bool TryGet(out char value) =>
+        Encoders.Char.TryDecode(this, out value);
 
-    public bool TryGet(out Rune value)
-    {
-        if (_reference == _runeEncoding) { value = _overlapped._runeVal; return true; }
-        if (_reference is VariantEncoding<Rune> encoding) { value = encoding.Decode(in this); return true; }
-        value = default;
-        return false;
-    }
+    public bool TryGet(out Rune value) =>
+        Encoders.Rune.TryDecode(this, out value);
 
     public bool TryGet([NotNullWhen(true)] out string? value)
     {
@@ -416,42 +380,22 @@ public readonly struct Variant : ITypeUnion<Variant>, IEquatable<Variant>
         return false;
     }
 
-    public bool TryGet(out DateTime value)
-    {
-        if (_reference == _dateTimeEncoding) { value = _overlapped._dateTimeVal; return true; }
-        if (_reference is VariantEncoding<DateTime> encoding) { value = encoding.Decode(in this); return true; }
-        value = default;
-        return false;
-    }
+    public bool TryGet(out DateTime value) =>
+        Encoders.DateTime.TryDecode(this, out value);
 
-    public bool TryGet(out DateOnly value)
-    {
-        if (_reference == _dateOnlyEncoding) { value = _overlapped._dateOnlyVal; return true; }
-        if (_reference is VariantEncoding<DateOnly> encoding) { value = encoding.Decode(in this); return true; }
-        value = default;
-        return false;
-    }
+    public bool TryGet(out DateOnly value) =>
+        Encoders.DateOnly.TryDecode(this, out value);
 
-    public bool TryGet(out TimeSpan value)
-    {
-        if (_reference == _timeSpanEncoding) { value = _overlapped._timeSpanVal; return true; }
-        if (_reference is VariantEncoding<TimeSpan> encoding) { value = encoding.Decode(in this); return true; }
-        value = default;
-        return false;
-    }
+    public bool TryGet(out TimeSpan value) =>
+        Encoders.TimeSpan.TryDecode(this, out value);
 
-    public bool TryGet(out TimeOnly value)
-    {
-        if (_reference == _timeOnlyEncoding) { value = _overlapped._timeOnlyVal; return true; }
-        if (_reference is VariantEncoding<TimeOnly> encoding) { value = encoding.Decode(in this); return true; }
-        value = default;
-        return false;
-    }
+    public bool TryGet(out TimeOnly value) =>
+        Encoders.TimeOnly.TryDecode(this, out value);
 
     public bool TryGet([NotNullWhen(true)] out object? value)
     {
-        if (_reference is VariantEncoding encoding) { value = encoding.GetBoxed(this); return true; }
-        if (_reference != null && _reference is not VariantEncoding) { value = _reference; return true; }
+        if (_reference is Encoding encoding) { value = encoding.GetBoxed(this); return true; }
+        if (_reference != null && _reference is not Encoding) { value = _reference; return true; }
         value = default!;
         return false;
     }
@@ -536,7 +480,7 @@ public readonly struct Variant : ITypeUnion<Variant>, IEquatable<Variant>
         if (value == null)
             return Null;
 
-        return VariantEncoder<TValue>.Instance.Encode(value);
+        return Encoder<TValue>.Instance.Encode(value);
     }
 
     /// <summary>
@@ -552,7 +496,7 @@ public readonly struct Variant : ITypeUnion<Variant>, IEquatable<Variant>
     /// True if the value is of the specified type.
     /// </summary>
     public bool IsType<T>() =>
-        Encoding.IsType<T>(in this);
+        GetEncoding().IsType<T>(in this);
 
     /// <summary>
     /// Returns the value as the specified type if the value is of the specified type or the default value of the type if not.
@@ -566,7 +510,7 @@ public readonly struct Variant : ITypeUnion<Variant>, IEquatable<Variant>
     /// Returns <see langword="true"/> and the value as the specified type if the value is of the specified type, otherwise returns <see langword="false"/>.
     /// </summary>
     public bool TryGet<T>([NotNullWhen(true)] out T value) =>
-        Encoding.TryGet(in this, out value);
+        GetEncoding().TryGet(in this, out value);
 
     /// <summary>
     /// Returns the value as the specified type if the value is of the specified type, otherwise throws <see cref="InvalidCastException"/>.
@@ -580,31 +524,31 @@ public readonly struct Variant : ITypeUnion<Variant>, IEquatable<Variant>
     /// Returns the value converted to a string.
     /// </summary>
     public override string ToString() =>
-        Encoding.GetString(in this);
+        GetEncoding().GetString(in this);
 
     /// <summary>
     /// Returns true if the value held by the variant is equal to the specified value.
     /// </summary>
     public bool Equals<T>(T value) =>
-        Encoding.IsEqual(in this, value);
+        GetEncoding().IsEqual(in this, value);
 
     /// <summary>
     /// Returns true if the value held by the variant is equal to the value held by the specified variant.
     /// </summary>
     public bool Equals(Variant variant) =>
-        Encoding.IsEqual(in this, in variant);
+        GetEncoding().IsEqual(in this, in variant);
 
     /// <summary>
     /// Returns true if the value held by the variant is equal to the specified value.
     /// </summary>
     public override bool Equals([NotNullWhen(true)] object? value) =>
-        Encoding.IsEqual(in this, value);
+        GetEncoding().IsEqual(in this, value);
 
     /// <summary>
     /// Returns the hash code of the value held by the variant.
     /// </summary>
     public override int GetHashCode() =>
-        Encoding.GetHashCode(in this);
+        GetEncoding().GetHashCode(in this);
 
     #endregion
 
@@ -658,55 +602,55 @@ public readonly struct Variant : ITypeUnion<Variant>, IEquatable<Variant>
     public static implicit operator Variant(Guid? value) => Create(value);
 
     public static explicit operator bool(Variant value) => value.GetBoolean();
-    public static implicit operator sbyte(Variant value) => value.GetSByte();
-    public static implicit operator short(Variant value) => value.GetInt16();
-    public static implicit operator int(Variant value) => value.GetInt32();
-    public static implicit operator long(Variant value) => value.GetInt64();
-    public static implicit operator byte(Variant value) => value.GetByte();
-    public static implicit operator ushort(Variant value) => value.GetUInt16();
-    public static implicit operator uint(Variant value) => value.GetUInt32();
-    public static implicit operator ulong(Variant value) => value.GetUInt64();
-    public static implicit operator float(Variant value) => value.GetSingle();
-    public static implicit operator double(Variant value) => value.GetDouble();
-    public static implicit operator Decimal64(Variant value) => value.GetDecimal64();
-    public static implicit operator decimal(Variant value) => value.GetDecimal();
-    public static implicit operator char(Variant value) => value.GetChar();
-    public static implicit operator Rune(Variant value) => value.GetRune();
-    public static implicit operator String(Variant value) => value.GetString();
-    public static implicit operator DateOnly(Variant value) => value.GetDateOnly();
-    public static implicit operator TimeOnly(Variant value) => value.GetTimeOnly();
-    public static implicit operator DateTime(Variant value) => value.GetDateTime();
-    public static implicit operator TimeSpan(Variant value) => value.GetTimeSpan();
-    public static implicit operator Guid(Variant value) => value.GetGuid();
+    public static explicit operator sbyte(Variant value) => value.GetSByte();
+    public static explicit operator short(Variant value) => value.GetInt16();
+    public static explicit operator int(Variant value) => value.GetInt32();
+    public static explicit operator long(Variant value) => value.GetInt64();
+    public static explicit operator byte(Variant value) => value.GetByte();
+    public static explicit operator ushort(Variant value) => value.GetUInt16();
+    public static explicit operator uint(Variant value) => value.GetUInt32();
+    public static explicit operator ulong(Variant value) => value.GetUInt64();
+    public static explicit operator float(Variant value) => value.GetSingle();
+    public static explicit operator double(Variant value) => value.GetDouble();
+    public static explicit operator Decimal64(Variant value) => value.GetDecimal64();
+    public static explicit operator decimal(Variant value) => value.GetDecimal();
+    public static explicit operator char(Variant value) => value.GetChar();
+    public static explicit operator Rune(Variant value) => value.GetRune();
+    public static explicit operator String(Variant value) => value.GetString();
+    public static explicit operator DateOnly(Variant value) => value.GetDateOnly();
+    public static explicit operator TimeOnly(Variant value) => value.GetTimeOnly();
+    public static explicit operator DateTime(Variant value) => value.GetDateTime();
+    public static explicit operator TimeSpan(Variant value) => value.GetTimeSpan();
+    public static explicit operator Guid(Variant value) => value.GetGuid();
 
     public static explicit operator bool?(Variant value) => value.IsNull ? default : (bool)value;
-    public static implicit operator sbyte?(Variant value) => value.IsNull ? default : (sbyte)value;
-    public static implicit operator short?(Variant value) => value.IsNull ? default : (short)value;
-    public static implicit operator int?(Variant value) => value.IsNull ? default : (int)value;
-    public static implicit operator long?(Variant value) => value.IsNull ? default : (long)value;
-    public static implicit operator byte?(Variant value) => value.IsNull ? default : (byte)value;
-    public static implicit operator ushort?(Variant value) => value.IsNull ? default : (ushort)value;
-    public static implicit operator uint?(Variant value) => value.IsNull ? default : (uint)value;
-    public static implicit operator ulong?(Variant value) => value.IsNull ? default : (ulong)value;
-    public static implicit operator float?(Variant value) => value.IsNull ? default : (float)value;
-    public static implicit operator double?(Variant value) => value.IsNull ? default : (double)value;
-    public static implicit operator Decimal64?(Variant value) => value.IsNull ? default : (Decimal64)value;
-    public static implicit operator decimal?(Variant value) => value.IsNull ? default : (decimal)value;
-    public static implicit operator char?(Variant value) => value.IsNull ? default : (char)value;
-    public static implicit operator Rune?(Variant value) => value.IsNull ? default : (Rune)value;
-    public static implicit operator DateOnly?(Variant value) => value.IsNull ? default : (DateOnly)value;
-    public static implicit operator TimeOnly?(Variant value) => value.IsNull ? default : (TimeOnly)value;
-    public static implicit operator DateTime?(Variant value) => value.IsNull ? default : (DateTime)value;
-    public static implicit operator TimeSpan?(Variant value) => value.IsNull ? default : (TimeSpan)value;
-    public static implicit operator Guid?(Variant value) => value.IsNull ? default : (Guid)value;
+    public static explicit operator sbyte?(Variant value) => value.IsNull ? default : (sbyte)value;
+    public static explicit operator short?(Variant value) => value.IsNull ? default : (short)value;
+    public static explicit operator int?(Variant value) => value.IsNull ? default : (int)value;
+    public static explicit operator long?(Variant value) => value.IsNull ? default : (long)value;
+    public static explicit operator byte?(Variant value) => value.IsNull ? default : (byte)value;
+    public static explicit operator ushort?(Variant value) => value.IsNull ? default : (ushort)value;
+    public static explicit operator uint?(Variant value) => value.IsNull ? default : (uint)value;
+    public static explicit operator ulong?(Variant value) => value.IsNull ? default : (ulong)value;
+    public static explicit operator float?(Variant value) => value.IsNull ? default : (float)value;
+    public static explicit operator double?(Variant value) => value.IsNull ? default : (double)value;
+    public static explicit operator Decimal64?(Variant value) => value.IsNull ? default : (Decimal64)value;
+    public static explicit operator decimal?(Variant value) => value.IsNull ? default : (decimal)value;
+    public static explicit operator char?(Variant value) => value.IsNull ? default : (char)value;
+    public static explicit operator Rune?(Variant value) => value.IsNull ? default : (Rune)value;
+    public static explicit operator DateOnly?(Variant value) => value.IsNull ? default : (DateOnly)value;
+    public static explicit operator TimeOnly?(Variant value) => value.IsNull ? default : (TimeOnly)value;
+    public static explicit operator DateTime?(Variant value) => value.IsNull ? default : (DateTime)value;
+    public static explicit operator TimeSpan?(Variant value) => value.IsNull ? default : (TimeSpan)value;
+    public static explicit operator Guid?(Variant value) => value.IsNull ? default : (Guid)value;
     #endregion
 
     #region Encoders
-    private abstract class VariantEncoder<TValue>
+    public abstract class Encoder<TValue>
     {
-        private static VariantEncoder<TValue>? _instance;
+        private static Encoder<TValue>? _instance;
 
-        public static VariantEncoder<TValue> Instance
+        public static Encoder<TValue> Instance
         {
             get
             {
@@ -720,7 +664,7 @@ public readonly struct Variant : ITypeUnion<Variant>, IEquatable<Variant>
             }
         }
 
-        private static unsafe VariantEncoder<TValue> CreateEncoder()
+        private static unsafe Encoder<TValue> CreateEncoder()
         {
             var ttype = typeof(TValue);
             if (ttype.IsValueType)
@@ -730,7 +674,7 @@ public readonly struct Variant : ITypeUnion<Variant>, IEquatable<Variant>
                     // value is some Nullable<T>
                     var elementType = ttype.GetGenericArguments()[0];
                     var encoderType = typeof(NullableEncoder<>).MakeGenericType(elementType);
-                    return (VariantEncoder<TValue>)Activator.CreateInstance(encoderType)!;
+                    return (Encoder<TValue>)Activator.CreateInstance(encoderType)!;
                 }
                 else if (RuntimeHelpers.IsReferenceOrContainsReferences<TValue>())
                 {
@@ -743,7 +687,7 @@ public readonly struct Variant : ITypeUnion<Variant>, IEquatable<Variant>
                 else if (ttype == typeof(decimal))
                 {
                     // use decimal encoder to conditionaly fit most common decimals in bits
-                    return (VariantEncoder<TValue>)(object)new DecimalEncoder();
+                    return (Encoder<TValue>)(object)new DecimalEncoder();
                 }
                 else if (sizeof(TValue) <= sizeof(Bits))
                 {
@@ -753,14 +697,14 @@ public readonly struct Variant : ITypeUnion<Variant>, IEquatable<Variant>
                 else if (ttype == typeof(Variant))
                 {
                     // use variant encoder to pass the value right back
-                    return (VariantEncoder<TValue>)(object)new VariantVariantEncoder();
+                    return (Encoder<TValue>)(object)new VariantVariantEncoder();
                 }
                 
                 if (ttype.IsAssignableTo(typeof(ITypeUnion)))
                 {
                     // struct that is a type union, use ITypeUnion interface to access value as a variant.
                     var encoderType = typeof(TypeUnionEncoder<>).MakeGenericType(ttype);
-                    return (VariantEncoder<TValue>)Activator.CreateInstance(encoderType)!;
+                    return (Encoder<TValue>)Activator.CreateInstance(encoderType)!;
                 }
             }
 
@@ -769,18 +713,28 @@ public readonly struct Variant : ITypeUnion<Variant>, IEquatable<Variant>
         }
 
         /// <summary>
-        /// Encodes a value into a <see cref="Variant"/>
+        /// Encodes a typed value into a <see cref="Variant"/>
         /// </summary>
         public abstract Variant Encode(TValue value);
+
+        /// <summary>
+        /// Decodes the variant back to a typed value.
+        /// </summary>
+        public abstract bool TryDecode(in Variant variant, [NotNullWhen(true)] out TValue value);
+
+        /// <summary>
+        /// Returns true if the variant is holding an instance of the typed value.
+        /// </summary>
+        public abstract bool IsType(in Variant variant);
     }
 
     /// <summary>
     /// An <see cref="VariantEncoder"/> for values that can be stored in the bits field.
     /// </summary>
-    private sealed class BitsEncoder<TValue> : VariantEncoder<TValue>
+    private sealed class BitsEncoder<TValue> : Encoder<TValue>
     {
-        private readonly VariantEncoding _encoding = 
-            BitsEncoding<TValue>.Instance;
+        private BitsEncoding<TValue> _encoding = default!;
+        private BitsEncoding<TValue> Encoding => _encoding ??= BitsEncoding<TValue>.Instance;
 
         public unsafe BitsEncoder()
         {
@@ -793,26 +747,81 @@ public readonly struct Variant : ITypeUnion<Variant>, IEquatable<Variant>
         public override Variant Encode(TValue value)
         {
             var bits = Unsafe.As<TValue, Bits>(ref value);
-            return new Variant(_encoding, new OverlappedBits { _bitsVal = bits });
+            return new Variant(this.Encoding, new OverlappedBits { _bitsVal = bits });
+        }
+
+        public override bool IsType(in Variant variant)
+        {
+            return variant._reference == this.Encoding
+                || variant._reference is TValue
+                || variant.GetEncoding() is VariantEncoding<TValue>;
+        }
+
+        public override bool TryDecode(in Variant variant, [NotNullWhen(true)] out TValue value)
+        {
+            if (variant._reference == this.Encoding)
+            {
+                value = this.Encoding.Decode(variant)!;
+                return true;
+            }
+            else if (variant._reference is TValue tvalue)
+            {
+                value = tvalue;
+                return true;
+            }
+            else if (variant.GetEncoding() is VariantEncoding<TValue> encoding)
+            {
+                value = encoding.Decode(variant)!;
+                return true;
+            }
+            else
+            {
+                value = default!;
+                return false;
+            }
         }
     }
 
     /// <summary>
-    /// An <see cref="VariantEncoder{TValue}"/> for types that are references or must be boxed.
+    /// An <see cref="Encoder{TValue}"/> for types that are references or must be boxed.
     /// </summary>
-    private sealed class ReferenceEncoder<TValue> : VariantEncoder<TValue>
+    private sealed class ReferenceEncoder<TValue> : Encoder<TValue>
     {
-        public override Variant Encode(TValue value) =>
-            new Variant(value, default);
+        public override Variant Encode(TValue value)
+        {
+            return new Variant(value, default);
+        }
+
+        public override bool IsType(in Variant variant)
+        {
+            return variant._reference is TValue;
+        }
+
+        public override bool TryDecode(in Variant variant, [NotNullWhen(true)] out TValue value)
+        {
+            if (variant._reference is TValue tvalue)
+            {
+                value = tvalue;
+                return true;
+            }
+            else
+            {
+                value = default!;
+                return false;
+            }
+        }
     }
 
     /// <summary>
-    /// An <see cref="VariantEncoder{TValue}"/> for types that are struct wrappers around
+    /// An <see cref="Encoder{TValue}"/> for types that are struct wrappers around
     /// a single reference.
     /// </summary>
-    private sealed class WrapperStructEncoder<TValue> : VariantEncoder<TValue>
+    private sealed class WrapperStructEncoder<TValue> : Encoder<TValue>
     {
-        private readonly int _encodingId =
+        private readonly WrapperStructEncoding<TValue> _encoding =
+            WrapperStructEncoding<TValue>.Instance;
+
+        private readonly int _encodingId = 
             WrapperStructEncoding<TValue>.Instance.GetId();
 
         public unsafe WrapperStructEncoder()
@@ -830,31 +839,81 @@ public readonly struct Variant : ITypeUnion<Variant>, IEquatable<Variant>
             var refValue = Unsafe.As<TValue, Reference>(ref value);
             return new Variant(refValue, new OverlappedBits { _int32Val = _encodingId });
         }
+
+        public override bool IsType(in Variant variant)
+        {
+            return (variant._overlapped._int32Val == _encodingId
+                && !(variant._reference is Encoding))
+                || variant.GetEncoding() is VariantEncoding<TValue>;
+        }
+
+        public override bool TryDecode(in Variant variant, [NotNullWhen(true)] out TValue value)
+        {
+            if (variant._overlapped._int32Val == _encodingId
+                && !(variant._reference is Encoding))
+            {
+                value = _encoding.Decode(variant)!;
+                return true;
+            }
+            else if (variant._reference is TValue tvalue)
+            {
+                value = tvalue;
+                return true;
+            }
+            else if (variant.GetEncoding() is VariantEncoding<TValue> encoding)
+            {
+                value = encoding.Decode(variant)!;
+                return true;
+            }
+            else
+            {
+                value = default!;
+                return false;
+            }
+        }
     }
 
     /// <summary>
-    /// An <see cref="VariantEncoder{TValue}"/> for Nullable&lt;T&gt; values.
+    /// An <see cref="Encoder{TValue}"/> for Nullable&lt;T&gt; values.
     /// </summary>
-    private sealed class NullableEncoder<TElement> : VariantEncoder<Nullable<TElement>>
+    private sealed class NullableEncoder<TElement> : Encoder<Nullable<TElement>>
         where TElement : struct
     {
-        private readonly VariantEncoder<TElement> _encoder =
-            VariantEncoder<TElement>.Instance;
+        private readonly Encoder<TElement> _encoder =
+            Encoder<TElement>.Instance;
 
-        public override Variant Encode(TElement? value) =>
-            _encoder.Encode(value.GetValueOrDefault()); // null is already handled
+        public override Variant Encode(TElement? value)
+        {
+            if (value == null)
+                return Variant.Null;
+            return _encoder.Encode(value.GetValueOrDefault());
+        }
+
+        public override bool IsType(in Variant variant)
+        {
+            // does not match type when null
+            return _encoder.IsType(variant);
+        }
+
+        public override bool TryDecode(in Variant variant, [NotNullWhen(true)] out TElement? value)
+        {
+            // cannot decode when null
+            var success = _encoder.TryDecode(variant, out var nnValue);
+            value = nnValue;
+            return success;
+        }
     }
 
     /// <summary>
-    /// A <see cref="VariantEncoder{TValue}"/> for decimal values
+    /// A <see cref="Encoder{TValue}"/> for decimal values
     /// </summary>
-    private sealed class DecimalEncoder : VariantEncoder<decimal>
+    private sealed class DecimalEncoder : Encoder<decimal>
     {
         public override Variant Encode(decimal value)
         {
             if (Decimal64.TryCreate(value, out var decVal))
             {
-                return new Variant(DecimalEncoding.Instance, new OverlappedBits { _decimal64Val = decVal });
+                return new Variant(DecimalAsDecimal64Encoding.Instance, new OverlappedBits { _decimal64Val = decVal });
             }
             else
             {
@@ -862,21 +921,63 @@ public readonly struct Variant : ITypeUnion<Variant>, IEquatable<Variant>
                 return new Variant(value, default);
             }
         }
+
+        public override bool IsType(in Variant variant)
+        {
+            return variant._reference == DecimalAsDecimal64Encoding.Instance
+                || variant._reference is decimal
+                || variant.GetEncoding() is VariantEncoding<decimal>;
+        }
+
+        public override bool TryDecode(in Variant variant, [NotNullWhen(true)] out decimal value)
+        {
+            if (variant._reference == DecimalAsDecimal64Encoding.Instance)
+            {
+                value = DecimalAsDecimal64Encoding.Instance.Decode(variant);
+                return true;
+            }
+            else if (variant._reference is decimal dval)
+            {
+                value = dval;
+                return true;
+            }
+            else if (variant.GetEncoding() is VariantEncoding<decimal> encoding)
+            {
+                value = encoding.Decode(variant)!;
+                return true;
+            }
+            else
+            {
+                value = default!;
+                return false;
+            }
+        }
     }
 
     /// <summary>
     /// An encoder for variant values that just returns the value.
     /// </summary>
-    private sealed class VariantVariantEncoder : VariantEncoder<Variant>
+    private sealed class VariantVariantEncoder : Encoder<Variant>
     {
         public override Variant Encode(Variant variant) =>
             variant;
+
+        public override bool IsType(in Variant variant)
+        {
+            return true;
+        }
+
+        public override bool TryDecode(in Variant variant, out Variant value)
+        {
+            value = variant;
+            return true;
+        }
     }
 
     /// <summary>
     /// An encoder for type unions that access the unions value as a variant.
     /// </summary>
-    private sealed class TypeUnionEncoder<TUnion> : VariantEncoder<TUnion>
+    private sealed class TypeUnionEncoder<TUnion> : Encoder<TUnion>
         where TUnion : ITypeUnion
     {
         public TypeUnionEncoder()
@@ -886,6 +987,17 @@ public readonly struct Variant : ITypeUnion<Variant>, IEquatable<Variant>
 
         public override Variant Encode(TUnion value) =>
             value.ToVariant();
+
+        public override bool IsType(in Variant variant)
+        {
+            return variant.IsType<TUnion>();
+        }
+
+        public override bool TryDecode(in Variant variant, out TUnion value)
+        {
+            // cannot determine constructable union from ITypeUnion, so no fast path here
+            return variant.TryGet(out value);
+        }
     }
 
     #endregion
@@ -894,7 +1006,7 @@ public readonly struct Variant : ITypeUnion<Variant>, IEquatable<Variant>
     /// <summary>
     /// A type that faciliates access to the value encoded inside a <see cref="Variant"/>
     /// </summary>
-    private abstract class VariantEncoding
+    private abstract class Encoding
     {
         public abstract Type GetType(in Variant variant);
         public abstract VariantKind GetKind(in Variant variant);
@@ -908,12 +1020,12 @@ public readonly struct Variant : ITypeUnion<Variant>, IEquatable<Variant>
         public abstract object GetBoxed(in Variant variant);
 
         /// <summary>
-        /// Return the <see cref="VariantEncoding"/> used by the <see cref="Variant"/>,
+        /// Return the <see cref="Encoding"/> used by the <see cref="Variant"/>,
         /// or null if the variant holds a value as a reference.
         /// </summary>
-        public static VariantEncoding GetEncoding(in Variant variant)
+        public static Encoding GetEncoding(in Variant variant)
         {
-            if (variant._reference is VariantEncoding enc)
+            if (variant._reference is Encoding enc)
             {
                 return enc;
             }
@@ -929,8 +1041,8 @@ public readonly struct Variant : ITypeUnion<Variant>, IEquatable<Variant>
             }
         }
 
-        protected static List<VariantEncoding> s_encodingList =
-            new List<VariantEncoding>(capacity: 1024) { null! };
+        protected static List<Encoding> s_encodingList =
+            new List<Encoding>(capacity: 1024) { null! };
     }
 
     private static VariantKind Unknown = (VariantKind)(-1);
@@ -985,7 +1097,7 @@ public readonly struct Variant : ITypeUnion<Variant>, IEquatable<Variant>
     /// <summary>
     /// Abstract base for a strongly typed variant encoding.
     /// </summary>
-    private abstract class VariantEncoding<TValue> : VariantEncoding
+    private abstract class VariantEncoding<TValue> : Encoding
     {
         public abstract TValue Decode(in Variant variant);
 
@@ -1072,7 +1184,7 @@ public readonly struct Variant : ITypeUnion<Variant>, IEquatable<Variant>
     /// <summary>
     /// Encoding for a reference or boxed value.
     /// </summary>
-    private sealed class ReferenceEncoding : VariantEncoding
+    private sealed class ReferenceEncoding : Encoding
     {
         internal static ReferenceEncoding Instance =
             new ReferenceEncoding();
@@ -1174,6 +1286,40 @@ public readonly struct Variant : ITypeUnion<Variant>, IEquatable<Variant>
         }
     }
 
+    /// <summary>
+    /// An encoding for a decimal values stored as a Decimal64 value.
+    /// </summary>
+    private sealed class Decimal64Encoding : VariantEncoding<Decimal64>
+    {
+        public static readonly Decimal64Encoding Instance =
+            new Decimal64Encoding();
+
+        private Decimal64Encoding() { }
+
+        public override Decimal64 Decode(in Variant variant)
+        {
+            return variant._overlapped._decimal64Val;
+        }
+    }
+
+    /// <summary>
+    /// An encoding for a decimal values stored as a Decimal64 value.
+    /// </summary>
+    private sealed class DecimalAsDecimal64Encoding : VariantEncoding<decimal>
+    {
+        public static readonly DecimalAsDecimal64Encoding Instance =
+            new DecimalAsDecimal64Encoding();
+
+        private DecimalAsDecimal64Encoding() { }
+
+        public override decimal Decode(in Variant variant)
+        {
+            return variant._overlapped._decimal64Val.ToDecimal();
+        }
+    }
+
+
+#if false
     private sealed class BoolEncoding : VariantEncoding<bool>
     {
         public static readonly BoolEncoding Instance =
@@ -1344,38 +1490,6 @@ public readonly struct Variant : ITypeUnion<Variant>, IEquatable<Variant>
     }
 
     /// <summary>
-    /// An encoding for a decimal values stored as a Decimal64 value.
-    /// </summary>
-    private sealed class Decimal64Encoding : VariantEncoding<Decimal64>
-    {
-        public static readonly Decimal64Encoding Instance =
-            new Decimal64Encoding();
-
-        private Decimal64Encoding() { }
-
-        public override Decimal64 Decode(in Variant variant)
-        {
-            return variant._overlapped._decimal64Val;
-        }
-    }
-
-    /// <summary>
-    /// An encoding for a decimal values stored as a Decimal64 value.
-    /// </summary>
-    private sealed class DecimalEncoding : VariantEncoding<decimal>
-    {
-        public static readonly DecimalEncoding Instance = 
-            new DecimalEncoding();
-
-        private DecimalEncoding() { }
-
-        public override decimal Decode(in Variant variant)
-        {
-            return variant._overlapped._decimal64Val.ToDecimal();
-        }
-    }
-
-    /// <summary>
     /// An encoding for DateTime values.
     /// </summary>
     private sealed class DateTimeEncoding : VariantEncoding<DateTime>
@@ -1438,6 +1552,7 @@ public readonly struct Variant : ITypeUnion<Variant>, IEquatable<Variant>
             return variant._overlapped._timeOnlyVal;
         }
     }
+#endif
 
     #endregion
 
