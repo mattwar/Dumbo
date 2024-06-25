@@ -7,7 +7,8 @@ namespace Dumbo.TypeUnions.Existing.Hybrid;
 [DebuggerDisplay("{DebugText}")]
 public readonly struct OneOf<T1, T2> : ITypeUnion<OneOf<T1, T2>>
 {
-    private readonly string DebugText => ToString();
+    private readonly string DebugText =>
+        $"OneOf<{typeof(T1).Name}, {typeof(T2).Name}>: {this.ToString()}";
 
     private readonly Variant _value;
 
@@ -119,7 +120,8 @@ public readonly struct OneOf<T1, T2> : ITypeUnion<OneOf<T1, T2>>
 [DebuggerDisplay("{DebugText}")]
 public readonly struct OneOf<T1, T2, T3> : ITypeUnion<OneOf<T1, T2, T3>>
 {
-    private readonly string DebugText => ToString();
+    private readonly string DebugText =>
+        $"OneOf<{typeof(T1).Name}, {typeof(T2).Name}, {typeof(T3).Name}>: {this.ToString()}";
 
     private readonly Variant _value;
 

@@ -18,6 +18,11 @@ public interface ITypeUnion<TSelf> : ITypeUnion
     abstract static bool TryCreate<T>(T value, [NotNullWhen(true)] out TSelf union);
 }
 
+public interface IClosedTypeUnion<TSelf> : ITypeUnion<TSelf>
+{
+    abstract static IReadOnlyList<Type> Types { get; }
+}
+
 /// <summary>
 /// A class that facilitates conditionally constructing type unions via <see cref="ITypeUnion{TSelf}"/>,
 /// if the interface is supported.
@@ -96,9 +101,6 @@ internal class TypeUnionAccessorImpl<TUnion> : TypeUnionAccessor<TUnion>
         union.TryGet<T>(out value);
 }
 
-
-
-#if false
 public class TypeUnionAttribute : Attribute
 {
     public IReadOnlyList<Type> Types { get; }
@@ -108,4 +110,3 @@ public class TypeUnionAttribute : Attribute
         this.Types = types;
     }
 }
-#endif
